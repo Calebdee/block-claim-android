@@ -1,0 +1,14 @@
+services:
+  block-claim:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: block-claim-server:latest
+    container_name: block-claim
+    restart: unless-stopped
+    ports:
+      - "8787:8787"          # change the left number to use a different port on the NAS
+    volumes:
+      - ./data:/data         # saved games (games.db) live here
+    environment:
+      - KEEP_DAYS=30         # games untouched this long are deleted

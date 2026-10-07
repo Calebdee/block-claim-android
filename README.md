@@ -1,27 +1,87 @@
-# Block Claim for Android
+# Block Claim
 
-A two-player dice-and-blocks territory game, packaged as an offline Android app.
+A two-player dice-and-blocks territory game: an offline Android app, plus a small game
+server you can run on your own NAS for online play.
 
-## Get the app
+## Android app
 
 Every push to `main` builds the APK on GitHub. Download the newest one on your phone:
 
-`https://github.com/<owner>/<repo>/releases/latest/download/block-claim.apk`
+`https://github.com/Calebdee/block-claim-android/releases/latest/download/block-claim.apk`
 
-Or open the repo's **Releases** page and tap `block-claim.apk`. The first time, Android asks you to allow installs from your browser; allow it, then install. New builds install over the old one and keep your saved game.
+The first time, Android asks you to allow installs from your browser; allow it, then install.
+New builds install over the old one and keep your saved game.
 
-## What's inside
+## Game server (Docker, e.g. on a Synology NAS)
 
-- `app/src/main/assets/index.html` — the whole game, bundled so it runs with no connection.
-- `MainActivity.java` — a full-screen WebView that loads the game.
-- `.github/workflows/build-apk.yml` — builds and signs the APK, then publishes it as a release.
+The server stores online games and also serves the game page, so any phone or laptop can
+play in a browser without installing anything.
 
-The app plays on one phone. Online Host/Join needs the Claude-hosted version of the page.
+### Start it
 
-## Updating the game
+From a terminal on the NAS (SSH, or code-server if it can run `docker`):
 
-Replace `app/src/main/assets/index.html` with a new version and push. A new release appears a few minutes later.
+```sh
+git clone https://github.com/Calebdee/block-claim-android.git
+cd block-claim-android
+sudo docker compose up -d --build      # older DSM: sudo docker-compose up -d --build
+```
+
+Or in **Container Manager → Project → Create**: pick the cloned `block-claim-android`
+folder as the path. It finds `docker-compose.yml`; then choose **Build** and start it.
+
+Check it's running: open `http://<NAS-IP>:8787/api/health` — you should see `"ok":true`.
+
+### Play online
+
+- **In a browser:** open `http://<NAS-IP>:8787` on each phone. Host on one, Join with the code on the other.
+- **In the Android app:** pick Host online or Join online, enter `<NAS-IP>:8787` as the game server, and tap Test connection.
+
+Both phones must be able to reach the NAS: on the same Wi-Fi, or anywhere through
+Tailscale (install the Tailscale package on the NAS and the app on each phone, then use the
+NAS's Tailscale address).
+
+If the connection test fails on your home network, check **Control Panel → Security →
+Firewall** on the NAS allows port 8787.
+
+### Update it
+
+```sh
+cd block-claim-android
+git pull
+sudo docker compose up -d --build
+```
+
+Saved games live in `block-claim-android/data/games.db` and survive updates and restarts.
+Games untouched for 30 days are deleted (change `KEEP_DAYS` in `docker-compose.yml`).
+
+### How it works
+
+Each game is one row: the whole game state as JSON, a revision number, and a private token
+for each seat. Phones check for a newer revision every 1.5 seconds. The server only accepts
+a move from the player whose turn it is, based on the latest revision, so moves can't
+cross or be forged by someone who only knows the code.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/games` | create a game, get the code and seat 1's token |
+| `POST /api/games/<code>/join` | take seat 2 (or rejoin with your token) |
+| `GET /api/games/<code>?since=<rev>` | latest state if newer, else `204` |
+| `POST /api/games/<code>/move` | save a move (`409` if the game moved on) |
+
+## Editing the game
+
+The game lives in `game/block-claim.html`. After changing it:
+
+```sh
+python3 tools/wrap_game.py   # refreshes app/src/main/assets/index.html
+```
+
+Push to `main` and GitHub rebuilds the APK and re-checks the server image. Run
+`git pull && sudo docker compose up -d --build` on the NAS to update the browser version.
 
 ## Signing
 
-`app/blockclaim.keystore` is a fixed signing key kept in the repo so every build can update the last one. That's fine for a personal sideloaded app. If you ever publish to the Play Store, make a new private key and keep it out of the repo.
+`app/blockclaim.keystore` is a fixed signing key kept in the repo so every build can update
+the last one. Fine for a personal sideloaded app; make a new private key if you ever publish
+to the Play Store.
