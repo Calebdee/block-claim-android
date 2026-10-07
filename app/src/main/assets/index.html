@@ -1,0 +1,1018 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif;background:#f3f6f8}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Block Claim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Chivo:wght@400;600;800&family=Chivo+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-column pass-and-play table — scores on top, graph-paper board in the middle, a "dice tray" control bar under it. */
+:root{
+  --paper:#f3f6f8; --paper-2:#ffffff; --line:#c9d9e3; --line-strong:#93b2c4;
+  --ink:#16232c; --muted:#5b6f7c;
+  --p1:#2453c9; --p1-soft:#c9d6f7; --p2:#d6336c; --p2-soft:#f8cfdd;
+  --bad:#b42318; --ok:#127a4a; --chip:#e4ecf1; --gold:#c99a06; --gold-soft:#fbeeb8;
+  --f-display:"Bowlby One SC","Arial Black",Impact,sans-serif;
+  --f-body:"Chivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Chivo Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0f171d; --paper-2:#162129; --line:#22323d; --line-strong:#3b5566;
+  --ink:#e6eef3; --muted:#91a7b5;
+  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1d2b35; --gold:#f5c842; --gold-soft:#4d3d0c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f171d; --paper-2:#162129; --line:#22323d; --line-strong:#3b5566;
+  --ink:#e6eef3; --muted:#91a7b5;
+  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1d2b35; --gold:#f5c842; --gold-soft:#4d3d0c; color-scheme:dark}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8vw,44px);line-height:1;margin:0;letter-spacing:.01em}
+h1 .x{color:var(--p2)} h1 .y{color:var(--p1)}
+.sub{color:var(--muted);margin:4px 0 0}
+.card{background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;text-transform:none;letter-spacing:0;min-width:0}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+legend{font-family:var(--f-display);font-size:16px;margin-bottom:8px}
+.stack{display:flex;flex-direction:column;gap:18px}
+.hint{font-size:13px;color:var(--muted);margin:0;text-transform:none;letter-spacing:0;font-weight:400}
+button{font:inherit;font-weight:800;border-radius:10px;border:1px solid var(--line-strong);background:var(--chip);color:var(--ink);padding:11px 14px;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--p1);outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button.go1{background:var(--p1);border-color:var(--p1);color:#fff}
+button.go2{background:var(--p2);border-color:var(--p2);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row > *{flex:0 0 auto}
+.grow{flex:1 1 auto}
+
+/* scoreboard */
+.score{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--paper);padding-block:6px}
+.pl{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;border:2px solid var(--line);background:var(--paper-2);min-width:0;text-align:left;font-weight:400}
+.pl.right{text-align:right;align-items:flex-end}
+.pl .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pl .n{font-family:var(--f-mono);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.pl .br{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pl .tag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bad)}
+.gem{color:var(--gold)}
+.pl.p1 .nm,.pl.p1 .n{color:var(--p1)} .pl.p2 .nm,.pl.p2 .n{color:var(--p2)}
+.pl.p1.on{border-color:var(--p1);background:var(--p1-soft)} .pl.p2.on{border-color:var(--p2);background:var(--p2-soft)}
+.pl.out{opacity:.6}
+.mid{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;align-self:center}
+
+/* playing: the page becomes a fixed app — scores and board stay put, only the controls below scroll */
+html.playing,html.playing body{height:100%;overflow:hidden}
+html.playing .wrap{height:100%;box-sizing:border-box;padding-block:8px 0;gap:0}
+html.playing #game{height:100%;display:flex;flex-direction:column;gap:8px;min-height:0}
+html.playing #game > .fixed{flex:0 0 auto;display:flex;flex-direction:column;gap:8px}
+html.playing #game > .below{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
+html.playing .score{position:static;padding-block:0}
+
+/* board */
+.boardbox{position:relative;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper-2);overflow:hidden;height:55vh}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.boardtools{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 12px;font-size:14px;background:transparent}
+.seg button + button{border-left:1px solid var(--line-strong)}
+
+/* tray */
+.tray{display:flex;flex-direction:column;gap:12px}
+.dice{display:flex;gap:10px;align-items:center}
+.die{width:48px;height:48px;border-radius:10px;background:var(--paper);border:2px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:6px;gap:2px}
+.die i{border-radius:50%;background:var(--ink);visibility:hidden;margin:2px}
+.die i.on{visibility:visible}
+.die.empty{border-style:dashed;opacity:.45}
+.roll-anim .die{animation:shake .35s ease}
+@keyframes shake{0%{transform:rotate(0)}30%{transform:rotate(-14deg) translateY(-3px)}60%{transform:rotate(10deg)}100%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){.roll-anim .die{animation:none}}
+.blocksize{font-family:var(--f-mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.msg{font-size:14px;min-height:1.4em}
+.msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)}
+.placegrp{display:flex;flex-direction:column;gap:8px}
+.pad{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr)) minmax(90px,1.6fr);gap:6px}
+.pad button{padding:0;height:48px;font-size:20px}
+.pad #placeBtn{font-size:16px}
+.lives{font-size:13px;letter-spacing:.1em;line-height:1}
+.manual{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.manual select{width:70px}
+
+/* end */
+.over{text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.over h2{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0;line-height:1.05;text-wrap:balance}
+.over table{border-collapse:collapse;font-variant-numeric:tabular-nums}
+.over td,.over th{padding:4px 12px;text-align:right;border-bottom:1px solid var(--line)}
+.over th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.over td:first-child,.over th:first-child{text-align:left}
+/* play-mode switch and online bar */
+.modes{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
+.modes button{border:0;border-radius:0;background:transparent;padding:12px 6px;font-size:14px}
+.modes button + button{border-left:1px solid var(--line-strong)}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.codein{font-family:var(--f-mono);font-size:22px;letter-spacing:.3em;text-transform:uppercase}
+.netbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding:8px 12px;border:1px dashed var(--line-strong);border-radius:10px}
+.netbar b{font-family:var(--f-mono);font-size:18px;letter-spacing:.2em;color:var(--ink)}
+.netbar button{padding:6px 10px;font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.dot.wait{background:var(--gold)}
+.err{color:var(--bad);font-size:14px;margin:0}
+details{font-size:14px} summary{cursor:pointer;font-weight:600}
+details ul{margin:8px 0 0;padding-left:20px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header id="hdr">
+    <h1>Block <span class="x">Cl</span><span class="y">aim</span></h1>
+    <p class="sub">Roll two dice, place your block, wall off the paper.</p>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup" class="stack">
+    <div class="card stack">
+      <fieldset>
+        <legend>Play</legend>
+        <div class="modes" role="group" aria-label="How to play">
+          <button id="pmLocal" aria-pressed="true">One phone</button>
+          <button id="pmHost" aria-pressed="false">Host online</button>
+          <button id="pmJoin" aria-pressed="false">Join online</button>
+        </div>
+        <p class="hint" id="playHint">Pass one phone back and forth. Works offline.</p>
+        <button id="rejoin" hidden></button>
+      </fieldset>
+      <div class="stack" id="joinBox" hidden>
+        <label for="joinCode">Game code<input id="joinCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD"></label>
+        <label for="joinName">Your name<input id="joinName" value="Player 2" maxlength="18"></label>
+        <button id="joinBtn" class="primary">Join game</button>
+        <p class="err" id="joinErr" hidden></p>
+      </div>
+    </div>
+    <div class="card stack" id="setupCard">
+      <fieldset>
+        <legend>Players</legend>
+        <div class="grid2">
+          <label for="n1">Player 1 · top-left<input id="n1" value="Player 1" maxlength="18"></label>
+          <label for="n2" id="n2Wrap">Player 2 · bottom-right<input id="n2" value="Player 2" maxlength="18"></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Grid</legend>
+        <label for="preset">Size
+          <select id="preset">
+            <option value="25x25" selected>Standard — 25 × 25</option>
+            <option value="42x59">A4 sheet, 5 mm squares — 42 × 59</option>
+            <option value="38x54">A4 printed grid, 5 mm with margins — 38 × 54</option>
+            <option value="21x29">A4 sheet, 1 cm squares — 21 × 29</option>
+            <option value="30x30">Quick game — 30 × 30</option>
+            <option value="20x20">Short game — 20 × 20</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </label>
+        <div class="grid2">
+          <label for="gw">Width (squares)<input id="gw" type="number" min="8" max="120" value="25" inputmode="numeric"></label>
+          <label for="gh">Height (squares)<input id="gh" type="number" min="8" max="160" value="25" inputmode="numeric"></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Game mode</legend>
+        <label for="mode">Mode
+          <select id="mode">
+            <option value="classic" selected>Classic — most squares wins</option>
+            <option value="power">Power Squares — capture the golden squares</option>
+          </select>
+        </label>
+        <label for="golds" id="goldsWrap" hidden>Golden squares<input id="golds" type="number" min="1" max="60" value="7" inputmode="numeric"></label>
+        <p class="hint" id="goldsHint" hidden>Golden squares are scattered at random but mirrored across the board, so each player gets the same layout from their corner. An odd number puts one in the centre, which keeps ties unlikely.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Rules</legend>
+        <label for="endRule">Game ends when
+          <select id="endRule">
+            <option value="sealed" selected>No disputed space is left</option>
+            <option value="rounds">A set number of rounds is played</option>
+            <option value="target">A player claims a share of the paper</option>
+          </select>
+        </label>
+        <label for="rounds" id="roundsWrap" hidden>Rounds<input id="rounds" type="number" min="1" max="500" value="20" inputmode="numeric"></label>
+        <label for="target" id="targetWrap" hidden>Share to win (%)<input id="target" type="number" min="5" max="95" value="50" inputmode="numeric"></label>
+        <label for="noFit">If a roll can't be placed
+          <select id="noFit">
+            <option value="out" selected>Lose a life; out at zero, the other plays on</option>
+            <option value="pass">Lose the turn only</option>
+          </select>
+        </label>
+        <label for="lives" id="livesWrap">Lives per player<input id="lives" type="number" min="1" max="20" value="3" inputmode="numeric"></label>
+        <label for="stall" id="stallWrap" hidden>End after this many passes in a row (0 = never)<input id="stall" type="number" min="0" max="50" value="8" inputmode="numeric"></label>
+        <label for="scoring">Score counts
+          <select id="scoring">
+            <option value="fill" selected>Placed + sealed space, which fills in with your colour</option>
+            <option value="territory">Placed + sealed space, left open on the board</option>
+            <option value="placed">Placed squares only</option>
+          </select>
+        </label>
+        <label for="diceMode">Dice
+          <select id="diceMode">
+            <option value="app" selected>Roll in the app</option>
+            <option value="manual">I'll roll real dice and enter them</option>
+          </select>
+        </label>
+      </fieldset>
+      <button id="start" class="primary">Start game</button>
+      <p class="err" id="hostErr" hidden></p>
+      <button id="resume" hidden>Resume saved game</button>
+    </div>
+    <details class="card">
+      <summary>How to play</summary>
+      <ul>
+        <li>Player 1's first block must cover the top-left square; Player 2's must cover the bottom-right.</li>
+        <li>On your turn, roll two dice. A 4 and a 3 gives a 4×3 block; rotate it either way.</li>
+        <li>Every later block must share an edge with one of your own blocks. No overlaps, no hanging off the paper.</li>
+        <li>If your roll can't fit anywhere, you lose a life (3 by default). At zero lives you're out and your opponent keeps rolling.</li>
+        <li>Empty space only you can reach is sealed: it fills in with your colour and counts toward your score.</li>
+        <li>The game ends when no empty space can be reached by both players, or when both are out. Empty space only you can reach counts as yours.</li>
+        <li>Power Squares mode: only golden squares score. Capture one by covering it with a block or sealing it inside your space. Most gold wins; total squares break a tie.</li>
+        <li>Online: one player picks Host online and shares the 4-letter code; the other picks Join online and types it in. Each phone can only move on its own turn.</li>
+        <li>Board: pinch to zoom, drag to look around. Tap to drop your block, drag it to move it, double-tap to rotate. Confirm with Place.</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="stack" hidden>
+   <div class="fixed">
+    <div class="score">
+      <button class="pl p1" id="pl1" aria-expanded="false"><span class="nm" id="nm1"></span><span class="n" id="sc1"></span><span class="br" id="br1" hidden></span><span class="lives" id="lv1"></span><span class="tag" id="out1" hidden>Out</span></button>
+      <div class="mid" id="midinfo"></div>
+      <button class="pl p2 right" id="pl2" aria-expanded="false"><span class="nm" id="nm2"></span><span class="n" id="sc2"></span><span class="br" id="br2" hidden></span><span class="lives" id="lv2"></span><span class="tag" id="out2" hidden>Out</span></button>
+    </div>
+
+    <div class="boardtools">
+      <span id="boardlabel"></span>
+      <span class="seg" role="group" aria-label="Zoom">
+        <button id="zout" aria-label="Zoom out">−</button><button id="zfit">Fit</button><button id="zin" aria-label="Zoom in">+</button>
+      </span>
+    </div>
+    <div class="boardbox" id="boardbox"><canvas id="cv" aria-label="Game board. Tap to drop the block, drag it to move, double-tap to rotate, pinch to zoom."></canvas></div>
+   </div>
+   <div class="below" id="below">
+    <div class="netbar" id="netBar" hidden>
+      <span class="dot" id="netDot"></span>
+      <span>Game code</span><b id="netCode"></b>
+      <button id="copyCode">Copy</button>
+      <span id="netWho" class="grow"></span>
+    </div>
+
+    <div class="card tray" id="tray">
+      <div class="row">
+        <div class="dice" id="dice"></div>
+        <div class="blocksize" id="blocksize"></div>
+        <div class="grow"></div>
+        <button id="rollBtn" class="go1">Roll</button>
+      </div>
+      <div class="manual" id="manualRow" hidden>
+        <label for="m1">Die 1<select id="m1"></select></label>
+        <label for="m2">Die 2<select id="m2"></select></label>
+        <button id="useRoll">Use roll</button>
+      </div>
+      <div class="msg" id="msg"></div>
+      <div class="placegrp" id="placeRow" hidden>
+        <div class="pad" aria-label="Move block">
+          <button data-dx="-1" data-dy="0" aria-label="Left">←</button>
+          <button data-dx="0" data-dy="-1" aria-label="Up">↑</button>
+          <button data-dx="0" data-dy="1" aria-label="Down">↓</button>
+          <button data-dx="1" data-dy="0" aria-label="Right">→</button>
+          <button id="placeBtn" class="primary">Place</button>
+        </div>
+        <div class="row">
+          <button id="rotBtn" class="grow">Rotate</button>
+          <button id="sugBtn" class="grow">Find a spot</button>
+        </div>
+      </div>
+      <div class="row">
+        <button id="undoBtn">Undo</button>
+        <div class="grow"></div>
+        <button id="quitBtn">End game…</button>
+      </div>
+      <div class="row" id="quitConfirm" hidden>
+        <span class="hint grow">End now and score the board as it stands?</span>
+        <button id="quitYes" class="primary">End & score</button>
+        <button id="quitNo">Keep playing</button>
+        <button id="quitSetup">Back to setup</button>
+      </div>
+    </div>
+
+    <div class="card over" id="over" hidden>
+      <h2 id="winner"></h2>
+      <p class="hint" id="overwhy"></p>
+      <table>
+        <thead><tr id="overhead"><th></th><th>Placed</th><th>Controlled</th><th>Total</th></tr></thead>
+        <tbody id="overtable"></tbody>
+      </table>
+      <div class="row" style="justify-content:center">
+        <button id="rematch" class="primary">Rematch</button>
+        <button id="newSetup">New setup</button>
+      </div>
+    </div>
+   </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const KEY='blockclaim-save-v2';
+let G=null;              // game state (saved)
+let V=null;              // board view {s,ox,oy} (not saved)
+let showBreak=false;
+
+/* ---------- setup ---------- */
+const preset=$('preset'),gw=$('gw'),gh=$('gh');
+preset.onchange=()=>{ if(preset.value!=='custom'){const[a,b]=preset.value.split('x');gw.value=a;gh.value=b;} };
+[gw,gh].forEach(i=>i.oninput=()=>{preset.value='custom'});
+function syncRuleFields(){const v=$('endRule').value;$('roundsWrap').hidden=v!=='rounds';$('targetWrap').hidden=v!=='target';$('stallWrap').hidden=$('noFit').value!=='pass';$('livesWrap').hidden=$('noFit').value!=='out';const pw=$('mode').value==='power';$('goldsWrap').hidden=!pw;$('goldsHint').hidden=!pw;}
+$('mode').onchange=syncRuleFields;
+$('endRule').onchange=syncRuleFields; $('noFit').onchange=syncRuleFields;
+for(const s of [$('m1'),$('m2')]) for(let i=1;i<=6;i++){const o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}
+
+function readSettings(){
+  const clamp=(v,a,b,d)=>{v=parseInt(v,10);return isNaN(v)?d:Math.max(a,Math.min(b,v));};
+  return {
+    n1:($('n1').value.trim()||'Player 1'), n2:($('n2').value.trim()||'Player 2'),
+    W:clamp(gw.value,8,120,25), H:clamp(gh.value,8,160,25),
+    mode:$('mode').value, golds:clamp($('golds').value,1,60,7),
+    endRule:$('endRule').value, rounds:clamp($('rounds').value,1,500,20), target:clamp($('target').value,5,95,50),
+    noFit:$('noFit').value, stall:clamp($('stall').value,0,50,8), lives:clamp($('lives').value,1,20,3),
+    scoring:$('scoring').value, diceMode:$('diceMode').value
+  };
+}
+function newGame(S){
+  return {S, cells:new Array(S.W*S.H).fill(0), ctrl:new Array(S.W*S.H).fill(0), blocks:[], turn:1, round:1, dice:null, ghost:null,
+          passes:0, out:{1:false,2:false}, lives:{1:S.lives||3,2:S.lives||3}, over:null, history:[], lastMsg:'',
+          gold:S.mode==='power'?genGold(S.W,S.H,S.golds):null};
+}
+// Golden squares: random, but placed in pairs mirrored through the board's centre
+// (a 180° turn maps Player 1's corner onto Player 2's), so both players face the same layout.
+// The odd golden square goes in the middle, on a cell equally far from both corners when one exists
+function centreCell(W,H){
+  const xs=[...new Set([Math.floor((W-1)/2),Math.ceil((W-1)/2)])], ys=[...new Set([Math.floor((H-1)/2),Math.ceil((H-1)/2)])];
+  const all=xs.flatMap(x=>ys.map(y=>[x,y])), fair=all.filter(([x,y])=>x+y===(W-1-x)+(H-1-y));
+  const pick=fair.length?fair:all; return pick[Math.floor(Math.random()*pick.length)];
+}
+function genGold(W,H,n){
+  n=Math.max(1,Math.min(n,Math.floor(W*H/6)));
+  const minCorner=Math.max(3,Math.round((W+H)/7));   // keep gold out of easy opening reach
+  const mir=(x,y)=>[W-1-x,H-1-y];
+  for(let spacing=3;spacing>=1;spacing--){
+    for(let attempt=0;attempt<60;attempt++){
+      const pts=[];
+      const ok=(x,y)=>x+y>=minCorner && (W-1-x)+(H-1-y)>=minCorner && pts.every(([a,b])=>Math.max(Math.abs(a-x),Math.abs(b-y))>=spacing);
+      if(n%2){ pts.push(centreCell(W,H)); }
+      let tries=0;
+      while(pts.length<n && tries<4000){
+        tries++;
+        const x=Math.floor(Math.random()*W), y=Math.floor(Math.random()*H), [mx,my]=mir(x,y);
+        if(x===mx&&y===my) continue;
+        if(Math.max(Math.abs(mx-x),Math.abs(my-y))<spacing) continue;
+        if(!ok(x,y)) continue; pts.push([x,y]);
+        if(!ok(mx,my)){ pts.pop(); continue; } pts.push([mx,my]);
+      }
+      if(pts.length===n) return pts.map(([x,y])=>y*W+x);
+    }
+  }
+  // fallback: tiny boards — mirrored pairs with no spacing rule
+  const out=new Set(); if(n%2){ const [cx,cy]=centreCell(W,H); out.add(cy*W+cx); }
+  while(out.size<n){ const k=Math.floor(Math.random()*W*H), m=W*H-1-k; if(k!==m&&!out.has(k)&&!out.has(m)){out.add(k);out.add(m);} }
+  return [...out].slice(0,n);
+}
+$('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } G=newGame(readSettings()); V=null; showGame(); };
+$('resume').onclick=()=>{ const g=load(); if(g) G=migrate(g); showGame(); };
+
+/* ---------- persistence ---------- */
+function save(){ if(online()) return; try{ localStorage.setItem(KEY,JSON.stringify(G)); }catch(e){} }
+function load(){ try{ const t=localStorage.getItem(KEY); return t?JSON.parse(t):null; }catch(e){ return null; } }
+
+/* ---------- rules ---------- */
+const idx=(x,y)=>y*G.S.W+x;
+const hasBlocks=p=>G.blocks.some(b=>b.p===p);
+const nameOf=p=>p===1?G.S.n1:G.S.n2;
+function valid(p,x,y,w,h){
+  const {W,H}=G.S, c=G.cells;
+  if(x<0||y<0||x+w>W||y+h>H) return false;
+  for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) if(c[idx(i,j)]) return false;
+  if(!hasBlocks(p)){
+    const cx=p===1?0:W-1, cy=p===1?0:H-1;
+    return cx>=x&&cx<x+w&&cy>=y&&cy<y+h;
+  }
+  for(let i=x;i<x+w;i++){ if(y>0&&c[idx(i,y-1)]===p) return true; if(y+h<H&&c[idx(i,y+h)]===p) return true; }
+  for(let j=y;j<y+h;j++){ if(x>0&&c[idx(x-1,j)]===p) return true; if(x+w<W&&c[idx(x+w,j)]===p) return true; }
+  return false;
+}
+function allSpots(p,a,b){
+  const out=[], {W,H}=G.S, dims=a===b?[[a,b]]:[[a,b],[b,a]];
+  for(const[w,h] of dims) for(let y=0;y<=H-h;y++) for(let x=0;x<=W-w;x++) if(valid(p,x,y,w,h)) out.push({x,y,w,h});
+  return out;
+}
+// Empty regions with the players they touch. owner: 1, 2, 0 = disputed, -1 = nobody
+function regions(){
+  const {W,H}=G.S,c=G.cells,seen=new Uint8Array(W*H),res=[];
+  const both=hasBlocks(1)&&hasBlocks(2);
+  for(let s=0;s<W*H;s++){
+    if(c[s]||seen[s]) continue;
+    let t1=false,t2=false; const cells=[], st=[s]; seen[s]=1;
+    while(st.length){
+      const k=st.pop(); cells.push(k); const x=k%W,y=(k/W)|0;
+      if(x>0)visit(k-1); if(x<W-1)visit(k+1); if(y>0)visit(k-W); if(y<H-1)visit(k+W);
+    }
+    function visit(n){ const v=c[n]; if(v===1)t1=true; else if(v===2)t2=true; else if(!seen[n]){seen[n]=1;st.push(n);} }
+    let owner=-1;
+    if(!both) owner=0;                       // before both have played, everything is open
+    else if(t1&&t2) owner=0; else if(t1) owner=1; else if(t2) owner=2;
+    res.push({cells,size:cells.length,owner});
+  }
+  return res;
+}
+let regionCache=null;
+function getRegions(){ return regionCache||(regionCache=regions()); }
+function scores(){
+  // placed = squares covered by blocks; controlled = sealed space (filled in or still open)
+  let p1=0,p2=0,s1=0,s2=0,disputed=0;
+  for(let k=0;k<G.cells.length;k++){ const v=G.cells[k]; if(!v) continue;
+    if(G.ctrl[k]){ if(v===1)s1++; else s2++; } else { if(v===1)p1++; else p2++; } }
+  for(const r of getRegions()){ if(r.owner===1)s1+=r.size; else if(r.owner===2)s2+=r.size; else if(r.owner===0)disputed+=r.size; }
+  if(G.S.scoring==='placed'){s1=0;s2=0;}
+  let g1=0,g2=0,gfree=0;
+  if(G.gold){
+    const own=new Map();
+    if(G.S.scoring!=='placed') for(const r of getRegions()) if(r.owner===1||r.owner===2) for(const k of r.cells) own.set(k,r.owner);
+    for(const k of G.gold){ const o=G.cells[k]||own.get(k)||0; if(o===1)g1++; else if(o===2)g2++; else gfree++; }
+  }
+  const power=!!G.gold;
+  return {p1,p2,s1,s2,disputed,g1,g2,gfree,power,sq1:p1+s1,sq2:p2+s2,
+          t1:power?g1:p1+s1, t2:power?g2:p2+s2};
+}
+// "fill" scoring: colour in every empty area that only one player can reach
+function fillSealed(){
+  if(G.S.scoring!=='fill') return 0;
+  let n=0;
+  for(const r of getRegions()){ if(r.owner!==1&&r.owner!==2) continue;
+    for(const k of r.cells){ G.cells[k]=r.owner; G.ctrl[k]=1; } n+=r.size; }
+  if(n) regionCache=null;
+  return n;
+}
+function checkEnd(){
+  const S=G.S, sc=scores(), total=S.W*S.H;
+  if(G.out[1]&&G.out[2]) return 'Neither player can place their roll.';
+  if(sc.power){
+    const n=G.gold.length;
+    if(sc.g1*2>n) return `${S.n1} holds a majority of the gold.`;
+    if(sc.g2*2>n) return `${S.n2} holds a majority of the gold.`;
+    if(sc.gfree===0) return 'Every golden square has been captured.';
+  }
+  if(S.endRule==='sealed' && hasBlocks(1)&&hasBlocks(2) && sc.disputed===0) return 'No disputed space is left.';
+  if(S.endRule==='target'){ const need=Math.ceil(total*S.target/100);
+    if(sc.t1>=need) return `${S.n1} reached ${S.target}% of the paper.`; if(sc.t2>=need) return `${S.n2} reached ${S.target}% of the paper.`; }
+  if(S.endRule==='rounds' && G.round>S.rounds) return `${S.rounds} rounds played.`;
+  if(sc.p1+sc.p2===total) return 'The paper is full.';
+  if(S.noFit==='pass'&&S.stall>0 && G.passes>=S.stall) return `${S.stall} passes in a row with no block placed.`;
+  return null;
+}
+
+/* ---------- turn flow ---------- */
+function snapshot(){ const {history,...rest}=G; G.history.push(JSON.stringify(rest)); if(G.history.length>60) G.history.shift(); }
+function setMsg(t,cls){ G.lastMsg=t; G.msgCls=cls||''; }
+function applyRoll(a,b){
+  G.dice=[a,b]; G.ghost=null;
+  const spots=allSpots(G.turn,a,b);
+  G.noFit=spots.length===0;
+  if(G.noFit){
+    const left=G.lives[G.turn]-1;
+    setMsg(G.S.noFit==='out'
+      ? `A ${a}×${b} block doesn't fit anywhere. ${nameOf(G.turn)} loses a life${left>0?` (${left} left)`:' and is out'}.`
+      : `A ${a}×${b} block doesn't fit anywhere. Turn passes.`,'bad');
+  } else if(!hasBlocks(G.turn)){ G.ghost={...spots[0]}; setMsg(`First block must cover your corner. Double-tap or Rotate to turn it, then Place.`); }
+  else setMsg(`Tap the board to drop your ${a}×${b} block. Drag to move, double-tap to rotate, then Place.`);
+  if(G.ghost) revealGhost();
+}
+function roll(){
+  if(G.over||!myTurn()) return;
+  if(G.dice && G.noFit){ noFitContinue(); return; }
+  if(G.dice) return;
+  snapshot();
+  applyRoll(1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6));
+  shakeDice();
+  commit(); render();
+}
+function endTurn(){
+  regionCache=null;
+  G.dice=null; G.ghost=null; G.noFit=false;
+  const other=G.turn===1?2:1;
+  if(G.turn===2 || G.out[other]) G.round++;   // a round ends after P2, or after each solo turn
+  if(!G.out[other]) G.turn=other;
+  const why=checkEnd();
+  if(why) G.over={why};
+  commit(); render();
+}
+function noFitContinue(){
+  if(G.S.noFit==='out'){
+    G.lives[G.turn]=Math.max(0,G.lives[G.turn]-1);
+    const fit=`${nameOf(G.turn)} couldn't fit a ${G.dice[0]}×${G.dice[1]}`;
+    if(G.lives[G.turn]===0){ G.out[G.turn]=true; setMsg(`${nameOf(G.turn)} is out of lives.`,'bad'); G.note=`${fit} and is out of lives.`; }
+    else { setMsg(`${nameOf(G.turn)} lost a life. ${G.lives[G.turn]} left.`,'bad'); G.note=`${fit} and lost a life (${G.lives[G.turn]} left).`; }
+  }
+  else { G.passes++; setMsg(`${nameOf(G.turn)} passed.`); G.note=`${nameOf(G.turn)} couldn't fit a ${G.dice[0]}×${G.dice[1]} and passed.`; }
+  endTurn();
+}
+function place(){
+  const g=G.ghost; if(!g||!G.dice) return;
+  if(!valid(G.turn,g.x,g.y,g.w,g.h)){ setMsg(invalidReason(g),'bad'); render(); return; }
+  snapshot();
+  for(let j=g.y;j<g.y+g.h;j++) for(let i=g.x;i<g.x+g.w;i++) G.cells[idx(i,j)]=G.turn;
+  G.blocks.push({p:G.turn,x:g.x,y:g.y,w:g.w,h:g.h});
+  G.passes=0;
+  regionCache=null;
+  const filled=fillSealed();
+  let note=`${nameOf(G.turn)} placed a ${g.w}×${g.h} block (+${g.w*g.h}).`;
+  if(filled) note+=` ${filled} sealed square${filled>1?'s':''} filled in.`;
+  setMsg(note,'ok'); G.note=note;
+  endTurn();
+}
+function invalidReason(g){
+  const {W,H}=G.S;
+  if(g.x<0||g.y<0||g.x+g.w>W||g.y+g.h>H) return 'That runs off the paper.';
+  for(let j=g.y;j<g.y+g.h;j++) for(let i=g.x;i<g.x+g.w;i++) if(G.cells[idx(i,j)]) return 'That overlaps a block.';
+  if(!hasBlocks(G.turn)) return 'Your first block has to cover your corner square.';
+  return 'It must share an edge with one of your blocks.';
+}
+function clampGhost(g){ const {W,H}=G.S; g.x=Math.max(0,Math.min(W-g.w,g.x)); g.y=Math.max(0,Math.min(H-g.h,g.y)); return g; }
+const canEditGhost=()=>G&&G.dice&&!G.noFit&&!G.over&&myTurn();
+function dropAt(cx,cy){
+  if(!canEditGhost()) return;
+  const w=G.ghost?G.ghost.w:G.dice[0], h=G.ghost?G.ghost.h:G.dice[1];
+  G.ghost=clampGhost({x:cx-Math.floor(w/2),y:cy-Math.floor(h/2),w,h});
+  ghostMsg(); render();
+}
+function ghostMsg(){
+  const g=G.ghost; if(!g) return;
+  if(valid(G.turn,g.x,g.y,g.w,g.h)) setMsg(`Good spot. Tap Place to confirm.`,'ok');
+  else setMsg(invalidReason(g),'bad');
+}
+function rotate(){ const g=G.ghost; if(!g||!canEditGhost()) return; const cx=g.x+g.w/2, cy=g.y+g.h/2; [g.w,g.h]=[g.h,g.w]; g.x=Math.round(cx-g.w/2); g.y=Math.round(cy-g.h/2); clampGhost(g); ghostMsg(); render(); }
+function nudge(dx,dy){ const g=G.ghost; if(!g||!canEditGhost()||!Number.isFinite(dx)||!Number.isFinite(dy)) return; g.x+=dx; g.y+=dy; clampGhost(g); ghostMsg(); revealGhost(); render(); }
+let sugI=0;
+function suggest(){
+  if(!canEditGhost()) return; const sp=allSpots(G.turn,G.dice[0],G.dice[1]); if(!sp.length) return;
+  const ref=G.ghost||{x:0,y:0,w:1,h:1};
+  sp.sort((a,b)=>(Math.abs(a.x-ref.x)+Math.abs(a.y-ref.y))-(Math.abs(b.x-ref.x)+Math.abs(b.y-ref.y)));
+  sugI=G.ghost&&valid(G.turn,ref.x,ref.y,ref.w,ref.h)?(sugI+1)%sp.length:0;
+  G.ghost={...sp[sugI]};
+  setMsg(`${sp.length} legal spot${sp.length>1?'s':''}. Tap Find again to try another.`,'ok');
+  revealGhost(); render();
+}
+function undo(){
+  const t=G.history.pop(); if(!t) return;
+  const h=G.history; G=JSON.parse(t); G.history=h; regionCache=null; setMsg('Undone.'); save(); render();
+}
+
+/* ---------- board view: pinch zoom, pan, tap, double-tap, drag ---------- */
+const cv=$('cv'), box=$('boardbox');
+function boxSize(){ return {w:box.clientWidth, h:box.clientHeight}; }
+function layoutBox(){
+  // Fit the box to the board's shape, capped at 62% of the screen height
+  const w=box.clientWidth; const ideal=w*G.S.H/G.S.W;
+  box.style.height=Math.round(Math.max(200,Math.min(ideal,window.innerHeight*0.56)))+'px';
+}
+function fitScale(){ const b=boxSize(); return Math.min(b.w/G.S.W, b.h/G.S.H); }
+function maxScale(){ return Math.max(fitScale()*2, 56); }
+function fitView(){ const b=boxSize(), s=fitScale(); V={s, ox:(b.w-G.S.W*s)/2, oy:(b.h-G.S.H*s)/2}; }
+function clampView(){
+  const b=boxSize(), {W,H}=G.S;
+  V.s=Math.max(fitScale(),Math.min(maxScale(),V.s));
+  const bw=W*V.s, bh=H*V.s, m=24;
+  V.ox = bw<=b.w ? (b.w-bw)/2 : Math.min(m,Math.max(b.w-bw-m,V.ox));
+  V.oy = bh<=b.h ? (b.h-bh)/2 : Math.min(m,Math.max(b.h-bh-m,V.oy));
+}
+function zoomAt(f,px,py){ const cx=(px-V.ox)/V.s, cy=(py-V.oy)/V.s; V.s*=f; clampView(); V.ox=px-cx*V.s; V.oy=py-cy*V.s; clampView(); draw(); }
+function revealGhost(){
+  // keep the ghost on screen when the board is zoomed in
+  if(!V||!G.ghost) return; const g=G.ghost,b=boxSize();
+  const x0=V.ox+g.x*V.s, y0=V.oy+g.y*V.s, x1=x0+g.w*V.s, y1=y0+g.h*V.s;
+  if(x0<0||y0<0||x1>b.w||y1>b.h){ V.ox=b.w/2-(g.x+g.w/2)*V.s; V.oy=b.h/2-(g.y+g.h/2)*V.s; clampView(); }
+}
+function cellAt(px,py){ return {x:Math.floor((px-V.ox)/V.s), y:Math.floor((py-V.oy)/V.s)}; }
+function inGhost(c){ const g=G.ghost; return g&&c.x>=g.x&&c.x<g.x+g.w&&c.y>=g.y&&c.y<g.y+g.h; }
+
+const ptrs=new Map(); let gest=null, lastTap=null;
+function localXY(e){ const r=cv.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+cv.addEventListener('pointerdown',e=>{
+  if(!G) return;
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  const p=localXY(e); ptrs.set(e.pointerId,p);
+  if(ptrs.size===1){
+    const c=cellAt(p.x,p.y);
+    gest={mode:'pending', sx:p.x, sy:p.y, t:performance.now(), ox:V.ox, oy:V.oy,
+          onGhost:canEditGhost()&&inGhost(c), grab:c, gx:G.ghost?.x, gy:G.ghost?.y};
+  } else if(ptrs.size===2){
+    const [a,b]=[...ptrs.values()];
+    gest={mode:'pinch', d0:Math.hypot(a.x-b.x,a.y-b.y)||1, mx:(a.x+b.x)/2, my:(a.y+b.y)/2, s0:V.s, ox0:V.ox, oy0:V.oy};
+  }
+});
+cv.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId)||!gest) return;
+  const p=localXY(e); ptrs.set(e.pointerId,p);
+  if(gest.mode==='pinch' && ptrs.size>=2){
+    const [a,b]=[...ptrs.values()];
+    const d=Math.hypot(a.x-b.x,a.y-b.y), mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const cx=(gest.mx-gest.ox0)/gest.s0, cy=(gest.my-gest.oy0)/gest.s0;
+    V.s=gest.s0*d/gest.d0; clampView();
+    V.ox=mx-cx*V.s; V.oy=my-cy*V.s; clampView(); draw(); return;
+  }
+  if(gest.mode==='pending' && Math.hypot(p.x-gest.sx,p.y-gest.sy)>8){
+    gest.mode=gest.onGhost?'ghost':'pan';
+  }
+  if(gest.mode==='pan'){ V.ox=gest.ox+(p.x-gest.sx); V.oy=gest.oy+(p.y-gest.sy); clampView(); draw(); }
+  else if(gest.mode==='ghost'){
+    const c=cellAt(p.x,p.y), g=G.ghost;
+    const nx=gest.gx+(c.x-gest.grab.x), ny=gest.gy+(c.y-gest.grab.y);
+    if(nx!==g.x||ny!==g.y){ g.x=nx; g.y=ny; clampGhost(g); draw(); }
+  }
+});
+function endPtr(e){
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if(!gest) return;
+  if(gest.mode==='pinch'){ if(ptrs.size===0) gest=null; else gest={mode:'done'}; return; }
+  if(ptrs.size>0) return;
+  const mode=gest.mode, t=performance.now()-gest.t;
+  if(mode==='pending' && t<450 && e.type==='pointerup') tap(gest.sx,gest.sy);
+  else if(mode==='ghost'){ ghostMsg(); render(); }
+  gest=null;
+}
+cv.addEventListener('pointerup',endPtr); cv.addEventListener('pointercancel',endPtr);
+function tap(px,py){
+  const c=cellAt(px,py), now=performance.now();
+  if(c.x<0||c.y<0||c.x>=G.S.W||c.y>=G.S.H) return;
+  const dbl=lastTap&&now-lastTap.t<320&&Math.hypot(px-lastTap.x,py-lastTap.y)<30;
+  lastTap={t:now,x:px,y:py};
+  if(!canEditGhost()) return;
+  if(dbl&&G.ghost){ lastTap=null; rotate(); return; }
+  if(inGhost(c)) return;             // tapping the block itself: leave it (a second tap rotates)
+  dropAt(c.x,c.y);
+}
+cv.addEventListener('wheel',e=>{ if(!V) return; e.preventDefault(); const p=localXY(e); zoomAt(Math.exp(-e.deltaY*0.0018),p.x,p.y); },{passive:false});
+$('zin').onclick=()=>{ const b=boxSize(); zoomAt(1.6,b.w/2,b.h/2); };
+$('zout').onclick=()=>{ const b=boxSize(); zoomAt(1/1.6,b.w/2,b.h/2); };
+$('zfit').onclick=()=>{ fitView(); draw(); };
+
+/* ---------- drawing ---------- */
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function draw(){
+  if(!G||$('game').hidden) return;
+  const b=boxSize(); if(!b.w) return;
+  if(!V) fitView(); else clampView();
+  const dpr=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(b.w*dpr)||cv.height!==Math.round(b.h*dpr)){ cv.width=Math.round(b.w*dpr); cv.height=Math.round(b.h*dpr); }
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  const {W,H}=G.S, s=V.s, ox=V.ox, oy=V.oy;
+  const C={bg:css('--paper'),paper:css('--paper-2'),line:css('--line'),strong:css('--line-strong'),ink:css('--ink'),p1:css('--p1'),p2:css('--p2'),p1s:css('--p1-soft'),p2s:css('--p2-soft'),bad:css('--bad'),mono:css('--f-mono')};
+  x.fillStyle=C.bg; x.fillRect(0,0,b.w,b.h);
+  x.fillStyle=C.paper; x.fillRect(ox,oy,W*s,H*s);
+  // controlled territory tint
+  if(G.S.scoring==='territory') for(const r of getRegions()){
+    if(r.owner!==1&&r.owner!==2) continue;
+    x.fillStyle=r.owner===1?C.p1s:C.p2s; x.globalAlpha=.75;
+    for(const k of r.cells) x.fillRect(ox+(k%W)*s,oy+((k/W)|0)*s,s,s);
+    x.globalAlpha=1;
+  }
+  // visible range
+  const i0=Math.max(0,Math.floor(-ox/s)), i1=Math.min(W,Math.ceil((b.w-ox)/s));
+  const j0=Math.max(0,Math.floor(-oy/s)), j1=Math.min(H,Math.ceil((b.h-oy)/s));
+  // grid
+  x.lineWidth=1;
+  const vline=(i,col)=>{x.strokeStyle=col;x.beginPath();const X=Math.round(ox+i*s)+.5;x.moveTo(X,oy+j0*s);x.lineTo(X,oy+j1*s);x.stroke();};
+  const hline=(j,col)=>{x.strokeStyle=col;x.beginPath();const Y=Math.round(oy+j*s)+.5;x.moveTo(ox+i0*s,Y);x.lineTo(ox+i1*s,Y);x.stroke();};
+  if(s>=5){ for(let i=i0;i<=i1;i++) if(i%5) vline(i,C.line); for(let j=j0;j<=j1;j++) if(j%5) hline(j,C.line); }
+  for(let i=i0;i<=i1;i++) if(i%5===0||i===W) vline(i,C.strong);
+  for(let j=j0;j<=j1;j++) if(j%5===0||j===H) hline(j,C.strong);
+  // corner markers
+  x.font=`700 ${Math.max(8,s*.7)}px ${C.mono}`; x.textAlign='center'; x.textBaseline='middle';
+  if(!G.cells[0]){ x.fillStyle=C.p1; x.fillText('1',ox+s/2,oy+s/2+1); }
+  if(!G.cells[W*H-1]){ x.fillStyle=C.p2; x.fillText('2',ox+(W-.5)*s,oy+(H-.5)*s+1); }
+  // claimed squares: one solid colour per player, so touching blocks merge into one shape
+  const c=G.cells, fillCol={1:C.p1,2:C.p2};
+  for(let j=j0;j<j1;j++) for(let i=i0;i<i1;i++){
+    const v=c[j*W+i]; if(!v) continue;
+    x.fillStyle=fillCol[v]; x.globalAlpha=G.ctrl[j*W+i]?.62:1;
+    // overdraw by a hair so no seams show between neighbouring squares
+    x.fillRect(Math.floor(ox+i*s),Math.floor(oy+j*s),Math.ceil(s)+1,Math.ceil(s)+1);
+  }
+  x.globalAlpha=1;
+  // borders: thick ink line where the two colours meet, thin dark edge where a colour meets empty paper
+  const seam=Math.max(2.5,s*.24), rim=Math.max(1,s*.08);
+  x.lineCap='square';
+  const edge=(x0,y0,x1,y1,col,w)=>{ x.strokeStyle=col; x.lineWidth=w; x.beginPath(); x.moveTo(x0,y0); x.lineTo(x1,y1); x.stroke(); };
+  const seams=[], rims=[];
+  for(let j=j0;j<j1;j++) for(let i=i0;i<i1;i++){
+    const v=c[j*W+i];
+    const X=ox+i*s, Y=oy+j*s;
+    // right edge
+    if(i+1<W){ const r=c[j*W+i+1]; if(v!==r){ (v&&r?seams:rims).push([X+s,Y,X+s,Y+s,v||r]); } }
+    else if(v) rims.push([X+s,Y,X+s,Y+s,v]);
+    // bottom edge
+    if(j+1<H){ const d=c[(j+1)*W+i]; if(v!==d){ (v&&d?seams:rims).push([X,Y+s,X+s,Y+s,v||d]); } }
+    else if(v) rims.push([X,Y+s,X+s,Y+s,v]);
+    if(i===0&&v) rims.push([X,Y,X,Y+s,v]);
+    if(j===0&&v) rims.push([X,Y,X+s,Y,v]);
+  }
+  x.globalAlpha=.55; for(const e of rims) edge(e[0],e[1],e[2],e[3],C.ink,rim); x.globalAlpha=1;
+  for(const e of seams) edge(e[0],e[1],e[2],e[3],C.ink,seam);
+  x.lineCap='butt';
+  if(G.gold){
+    const gold=css('--gold'), goldSoft=css('--gold-soft');
+    for(const k of G.gold){
+      const gi=k%W, gj=(k/W)|0, X=ox+gi*s, Y=oy+gj*s;
+      if(X>b.w||Y>b.h||X+s<0||Y+s<0) continue;
+      const taken=!!c[k];
+      if(!taken){ x.fillStyle=goldSoft; x.fillRect(X+1,Y+1,s-1,s-1); }
+      const r=s*(taken?.3:.36), cx=X+s/2, cy=Y+s/2;
+      x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r,cy); x.lineTo(cx,cy+r); x.lineTo(cx-r,cy); x.closePath();
+      x.fillStyle=gold; x.fill();
+      x.lineWidth=Math.max(1,s*.07); x.strokeStyle=taken?C.paper:C.ink; x.globalAlpha=taken?1:.5; x.stroke(); x.globalAlpha=1;
+    }
+  }
+  const last=G.blocks[G.blocks.length-1];
+  if(last){ x.strokeStyle=C.paper; x.lineWidth=2; x.setLineDash([4,3]); x.strokeRect(ox+last.x*s+3,oy+last.y*s+3,last.w*s-6,last.h*s-6); x.setLineDash([]); }
+  // ghost
+  const g=G.ghost;
+  if(g&&!G.over){
+    const ok=valid(G.turn,g.x,g.y,g.w,g.h), col=G.turn===1?C.p1:C.p2;
+    const X=ox+g.x*s, Y=oy+g.y*s;
+    x.fillStyle=ok?(G.turn===1?C.p1s:C.p2s):C.bad; x.globalAlpha=ok?.9:.35;
+    x.fillRect(X,Y,g.w*s,g.h*s); x.globalAlpha=1;
+    x.strokeStyle=ok?col:C.bad; x.lineWidth=Math.max(2,s*.18); x.setLineDash(ok?[]:[5,4]);
+    x.strokeRect(X+1,Y+1,g.w*s-2,g.h*s-2); x.setLineDash([]);
+    x.fillStyle=ok?col:C.bad; x.font=`700 ${Math.max(10,Math.min(s*.7,18))}px ${C.mono}`;
+    if(g.w*s>=28&&g.h*s>=16) x.fillText(`${g.w}×${g.h}`,X+g.w*s/2,Y+g.h*s/2+1);
+  }
+}
+let rz=0;
+window.addEventListener('resize',()=>{ cancelAnimationFrame(rz); rz=requestAnimationFrame(()=>{ if(G&&!$('game').hidden){ const was=V&&Math.abs(V.s-fitScale())<1e-3; layoutBox(); if(!V||was) fitView(); draw(); }}); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>draw());
+new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- UI render ---------- */
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieHTML(n){ let s=`<div class="die${n?'':' empty'}" aria-label="${n?'Die showing '+n:'Not rolled'}">`; for(let i=0;i<9;i++) s+=`<i class="${n&&PIPS[n].includes(i)?'on':''}"></i>`; return s+'</div>'; }
+function render(){
+  const S=G.S, sc=scores(), tot=S.W*S.H, terr=S.scoring!=='placed';
+  $('nm1').textContent=S.n1; $('nm2').textContent=S.n2;
+  $('sc1').textContent=sc.t1; $('sc2').textContent=sc.t2;
+  const brk=(p,sq,ctl)=>sc.power?`Squares ${sq}${terr?` (${p}+${ctl})`:''}`:(terr?`Placed ${p} · Controlled ${ctl}`:`Placed ${p}`);
+  $('br1').textContent=brk(sc.p1,sc.sq1,sc.s1); $('br2').textContent=brk(sc.p2,sc.sq2,sc.s2);
+  if(sc.power){ $('sc1').innerHTML=`<span class="gem">◆</span> ${sc.g1}`; $('sc2').innerHTML=`<span class="gem">◆</span> ${sc.g2}`; }
+  $('br1').hidden=$('br2').hidden=!showBreak;
+  $('pl1').setAttribute('aria-expanded',String(showBreak)); $('pl2').setAttribute('aria-expanded',String(showBreak));
+  $('out1').hidden=!G.out[1]; $('out2').hidden=!G.out[2];
+  const hearts=p=>S.noFit==='out'&&!G.out[p]?'♥'.repeat(G.lives[p])+'♡'.repeat(Math.max(0,(S.lives||3)-G.lives[p])):'';
+  $('lv1').textContent=hearts(1); $('lv2').textContent=hearts(2);
+  $('lv1').setAttribute('aria-label',`${G.lives[1]} lives`); $('lv2').setAttribute('aria-label',`${G.lives[2]} lives`);
+  $('pl1').classList.toggle('out',G.out[1]); $('pl2').classList.toggle('out',G.out[2]);
+  $('pl1').classList.toggle('on',!G.over&&G.turn===1); $('pl2').classList.toggle('on',!G.over&&G.turn===2);
+  const rLabel=S.endRule==='rounds'?`Round ${Math.min(G.round,S.rounds)}/${S.rounds}`:`Round ${G.round}`;
+  $('midinfo').innerHTML=sc.power?`${rLabel}<br>${sc.gfree} of ${G.gold.length} gold free`:`${rLabel}<br>${sc.disputed} open`;
+  $('boardlabel').textContent=`${S.W} × ${S.H} · pinch or +/− to zoom`;
+  $('dice').innerHTML=dieHTML(G.dice?.[0])+dieHTML(G.dice?.[1]);
+  $('blocksize').textContent=G.dice?`${G.dice[0]}×${G.dice[1]}`:'';
+  const who=nameOf(G.turn), manual=S.diceMode==='manual';
+  const rb=$('rollBtn'); rb.className=G.turn===1?'go1':'go2';
+  if(G.dice&&G.noFit){
+    const other=G.turn===1?2:1;
+    rb.textContent=G.out[other]?'Continue':`Continue to ${nameOf(other)}`; rb.hidden=false; rb.disabled=false;
+  } else { rb.textContent=`Roll for ${who}`; rb.hidden=manual; rb.disabled=!!G.dice; }
+  const mine=myTurn();
+  if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=online()&&NET.status==='waiting'?'Waiting for a player':`${who}'s turn`; }
+  $('manualRow').hidden=!manual||!!G.dice||!!G.over||!mine;
+  $('placeRow').hidden=!G.dice||G.noFit||!!G.over||!mine;
+  $('placeBtn').className=G.turn===1?'go1':'go2';
+  $('placeBtn').disabled=!G.ghost;
+  $('rotBtn').disabled=!G.ghost||G.dice[0]===G.dice[1];
+  document.querySelectorAll('.pad button').forEach(b=>b.disabled=!G.ghost);
+  $('undoBtn').disabled=!G.history.length; $('undoBtn').hidden=online();
+  $('quitBtn').hidden=online()&&!NET.seat;
+  renderNet();
+  const m=$('msg');
+  const solo=G.out[G.turn===1?2:1]?` (playing on alone)`:'';
+  if(online()&&!mine&&!G.over){
+    const note=G.note?G.note+' ':'';
+    m.textContent=NET.status==='waiting'?`Share code ${NET.code} with the other player. The game starts when they join.`
+      : NET.seat?`${note}Waiting for ${who}${G.dice?` to place a ${G.dice[0]}×${G.dice[1]}`:' to roll'}…`
+      : `Watching. ${note}`;
+    G.lastMsg=''; G.msgCls='';
+  } else if(online()&&!G.lastMsg&&!G.dice&&!G.over){
+    m.textContent=`${G.note?G.note+' ':''}Your turn. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`;
+  } else
+  m.textContent=G.lastMsg||(G.dice?'':`${who}'s turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
+  m.className='msg '+(G.msgCls||'');
+  $('tray').hidden=!!G.over; $('over').hidden=!G.over;
+  $('rematch').hidden=online()&&!NET.seat;
+  if(G.over){
+    if(sc.power){
+      const tie=sc.g1===sc.g2, tb=tie&&sc.sq1!==sc.sq2;
+      const win=tie?(tb?(sc.sq1>sc.sq2?1:2):0):(sc.g1>sc.g2?1:2);
+      $('winner').textContent=win?`${nameOf(win)} wins, ${Math.max(sc.g1,sc.g2)} gold to ${Math.min(sc.g1,sc.g2)}`:`It's a tie, ${sc.g1} gold each`;
+      $('overwhy').textContent=G.over.why+(tb?' Gold was level, so total squares decided it.':'')+(sc.gfree?` ${sc.gfree} golden square${sc.gfree>1?'s were':' was'} never captured.`:'');
+      $('overhead').innerHTML='<th></th><th>Gold</th><th>Squares</th>';
+      $('overtable').innerHTML=[[S.n1,sc.g1,sc.sq1],[S.n2,sc.g2,sc.sq2]].map(r=>`<tr><td>${esc(r[0])}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
+    } else {
+      const w=sc.t1===sc.t2?"It's a tie":`${sc.t1>sc.t2?S.n1:S.n2} wins`;
+      $('winner').textContent=`${w}, ${Math.max(sc.t1,sc.t2)} to ${Math.min(sc.t1,sc.t2)}`;
+      $('overwhy').textContent=G.over.why+(sc.disputed?` ${sc.disputed} disputed square${sc.disputed>1?'s':''} count for nobody.`:'');
+      $('overhead').innerHTML='<th></th><th>Placed</th><th>Controlled</th><th>Total</th>';
+      $('overtable').innerHTML=[[S.n1,sc.p1,sc.s1,sc.t1],[S.n2,sc.p2,sc.s2,sc.t2]].map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${terr?r[2]:'—'}</td><td><b>${r[3]}</b></td></tr>`).join('');
+    }
+  }
+  draw();
+  G.lastMsg=''; G.msgCls='';
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('pl1').onclick=$('pl2').onclick=()=>{ showBreak=!showBreak; render(); };
+$('rollBtn').onclick=roll;
+$('useRoll').onclick=()=>{ if(G.dice||G.over||!myTurn()) return; snapshot(); applyRoll(+$('m1').value,+$('m2').value); commit(); render(); };
+$('placeBtn').onclick=place; $('rotBtn').onclick=rotate; $('sugBtn').onclick=suggest; $('undoBtn').onclick=undo;
+document.querySelectorAll('.pad button[data-dx]').forEach(b=>b.onclick=()=>nudge(+b.dataset.dx,+b.dataset.dy));
+$('quitBtn').onclick=()=>{$('quitConfirm').hidden=false;};
+$('quitNo').onclick=()=>{$('quitConfirm').hidden=true;};
+$('quitYes').onclick=()=>{$('quitConfirm').hidden=true; if(online()&&!NET.seat) return; G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; commit(); render();};
+$('quitSetup').onclick=()=>{$('quitConfirm').hidden=true; leaveOnline(); showSetup();};
+$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; commit(); render(); };
+$('newSetup').onclick=()=>{ leaveOnline(); showSetup(); };
+document.addEventListener('keydown',e=>{
+  if($('game').hidden||!G||G.over||e.target.matches('input,select')) return;
+  const k=e.key;
+  if(k==='ArrowUp'){nudge(0,-1);e.preventDefault();} else if(k==='ArrowDown'){nudge(0,1);e.preventDefault();}
+  else if(k==='ArrowLeft'){nudge(-1,0);e.preventDefault();} else if(k==='ArrowRight'){nudge(1,0);e.preventDefault();}
+  else if(k==='r'||k==='R') rotate(); else if(k==='Enter'&&G.ghost) place(); else if(k===' '&&!G.dice){roll();e.preventDefault();}
+});
+
+function showGame(){
+  $('setup').hidden=true; $('hdr').hidden=true; $('game').hidden=false;
+  document.documentElement.classList.add('playing'); window.scrollTo(0,0);
+  regionCache=null; G.out=G.out||{1:false,2:false};
+  layoutBox(); if(!V) fitView(); render(); save();
+}
+function showSetup(){
+  $('game').hidden=true; $('setup').hidden=false; $('hdr').hidden=false;
+  document.documentElement.classList.remove('playing');
+  if(G){ const S=G.S; $('n1').value=S.n1; $('n2').value=S.n2; gw.value=S.W; gh.value=S.H;
+    const p=`${S.W}x${S.H}`; preset.value=[...preset.options].some(o=>o.value===p)?p:'custom';
+    $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('golds').value=S.golds||7;
+    $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; syncRuleFields(); }
+  const lg=load(); $('resume').hidden=!(lg&&lg.S&&!lg.over)||playMode!=='local';
+  syncPlayModes();
+}
+
+/* ---------- boot ---------- */
+function migrate(g){
+  g.history=g.history||[]; g.S.noFit=g.S.noFit||'out'; if(g.ghost&&!Number.isFinite(g.ghost.x+g.ghost.y)) g.ghost=null; g.S.lives=g.S.lives||3;
+  g.ctrl=g.ctrl||new Array(g.cells.length).fill(0); g.lives=g.lives||{1:g.S.lives,2:g.S.lives}; g.out=g.out||{1:false,2:false};
+  return g;
+}
+function start(data){
+  bootNet(data&&data.net);
+  if(data&&data.net) return;          // reconnecting to an online game; the first snapshot opens the board
+  const saved=data&&data.G?data.G:load();
+  if(saved&&saved.S&&Array.isArray(saved.cells)){
+    G=migrate(saved);
+    if(data&&data.inGame){ V=data.V||null; showBreak=!!data.showBreak; showGame(); return; }
+  }
+  showSetup();
+}
+
+/* ---------- online play (shared game document per code) ---------- */
+const NETKEY='blockclaim-online-v1';
+const NET={db:null,user:null,ref:null,unsub:null,code:null,seat:0,rev:0,status:null,first:false,q:Promise.resolve(),checked:false};
+let playMode='local';
+function online(){ return !!NET.ref; }
+function myTurn(){ return !online()||(NET.status==='playing'&&!!G&&G.turn===NET.seat); }
+async function bootNet(resumeNet){
+  try{ NET.db=await window.claude?.use?.('db')||null; }catch(e){ NET.db=null; }
+  try{ NET.user=await window.claude?.use?.('user')||null; }catch(e){ NET.user=null; }
+  NET.checked=true; syncPlayModes();
+  if(resumeNet&&NET.db) connect(resumeNet.code,resumeNet.seat);
+}
+async function myId(){
+  let id=null; try{ id=await NET.user?.id?.(); }catch(e){}
+  if(id) return String(id);
+  try{ id=localStorage.getItem('blockclaim-pid'); if(!id){ id='p'+Math.random().toString(36).slice(2,10); localStorage.setItem('blockclaim-pid',id); } }catch(e){ id=id||'p'+Math.random().toString(36).slice(2,10); }
+  return id;
+}
+function packState(g){ const {history,ghost,lastMsg,msgCls,...rest}=g; return JSON.stringify(rest); }
+const CODECHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const genCode=()=>Array.from({length:4},()=>CODECHARS[Math.floor(Math.random()*CODECHARS.length)]).join('');
+function showErr(id,t){ const e=$(id); e.textContent=t||''; e.hidden=!t; }
+
+function syncPlayModes(){
+  const can=!!NET.db;
+  [['pmLocal','local'],['pmHost','host'],['pmJoin','join']].forEach(([id,m])=>{ $(id).setAttribute('aria-pressed',String(playMode===m)); });
+  $('pmHost').disabled=$('pmJoin').disabled=NET.checked&&!can;
+  $('playHint').textContent=
+    playMode==='host'?'Set up the game, then share the code. You play Player 1 (top-left). The other player needs this page shared with them as an Editor.'
+   :playMode==='join'?"Type the code from the host's screen. You play Player 2 (bottom-right)."
+   :(NET.checked&&!can?'Pass one phone back and forth. Online play needs this page opened from its Claude link while signed in.':'Pass one phone back and forth. Works offline.');
+  $('joinBox').hidden=playMode!=='join';
+  $('setupCard').hidden=playMode==='join';
+  $('n2Wrap').hidden=playMode==='host';
+  $('start').textContent=playMode==='host'?'Host online game':'Start game';
+  let saved=null; try{ saved=JSON.parse(localStorage.getItem(NETKEY)||'null'); }catch(e){}
+  $('rejoin').hidden=!(can&&saved&&saved.code)||online();
+  if(saved) $('rejoin').textContent=`Rejoin online game ${saved.code}`;
+  const lg=load(); $('resume').hidden=!(lg&&lg.S&&!lg.over)||playMode!=='local';
+}
+$('pmLocal').onclick=()=>{ playMode='local'; syncPlayModes(); };
+$('pmHost').onclick=()=>{ playMode='host'; syncPlayModes(); };
+$('pmJoin').onclick=()=>{ playMode='join'; syncPlayModes(); $('joinCode').focus(); };
+$('joinCode').oninput=e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4); };
+$('joinBtn').onclick=()=>joinGame($('joinCode').value, $('joinName').value.trim()||'Player 2');
+$('rejoin').onclick=()=>{ try{ const s=JSON.parse(localStorage.getItem(NETKEY)); if(s) connect(s.code,s.seat); }catch(e){} };
+$('copyCode').onclick=async()=>{ try{ await navigator.clipboard.writeText(NET.code); $('copyCode').textContent='Copied'; setTimeout(()=>$('copyCode').textContent='Copy',1500); }catch(e){ const r=document.createRange(); r.selectNodeContents($('netCode')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
+
+async function hostGame(){
+  if(!NET.db) return showErr('hostErr','Online play is not available here.');
+  showErr('hostErr',''); $('start').disabled=true;
+  try{
+    const S=readSettings(); const st=newGame(S); st.note=`${S.n1} is hosting.`;
+    let code=genCode();
+    for(let i=0;i<6;i++){ const snap=await NET.db.doc('games/'+code).get(); if(!snap.exists) break; code=genCode(); }
+    const me=await myId();
+    await NET.db.doc('games/'+code).set({state:packState(st), seats:{'1':me}, status:'waiting', rev:1, created:Date.now()});
+    connect(code,1);
+  }catch(e){ showErr('hostErr', e&&e.code==='invalid_argument'?"You can't start online games on this page. Ask its owner to share it with you as an Editor.":"Couldn't create the game. Check your connection and try again."); }
+  finally{ $('start').disabled=false; }
+}
+async function joinGame(code,name){
+  if(!NET.db) return showErr('joinErr','Online play is not available here.');
+  code=(code||'').toUpperCase(); if(code.length!==4) return showErr('joinErr','Codes are 4 characters, like K7QM.');
+  showErr('joinErr',''); $('joinBtn').disabled=true;
+  try{
+    const ref=NET.db.doc('games/'+code); const snap=await ref.get();
+    if(!snap.exists){ showErr('joinErr',`No game found with code ${code}. Check it with the host.`); return; }
+    const d=snap.data(), seats=d.seats||{}, me=await myId();
+    let seat=seats['1']===me?1:seats['2']===me?2:0;
+    if(!seat&&!seats['2']){
+      const st=JSON.parse(d.state); st.S.n2=name; st.note=`${name} joined. ${st.S.n1} rolls first.`;
+      await ref.update({seats:{'2':me}, status:'playing', state:JSON.stringify(st), rev:(d.rev||0)+1});
+      seat=2;
+    }
+    connect(code,seat);
+  }catch(e){ showErr('joinErr', e&&e.code==='invalid_argument'?"You can't join games on this page yet. Ask its owner to share it with you as an Editor.":"Couldn't join. Check your connection and try again."); }
+  finally{ $('joinBtn').disabled=false; }
+}
+function connect(code,seat){
+  if(!NET.db) return;
+  NET.unsub?.(); NET.code=code; NET.seat=seat; NET.rev=0; NET.first=false; NET.status=null;
+  NET.ref=NET.db.doc('games/'+code);
+  try{ localStorage.setItem(NETKEY,JSON.stringify({code,seat})); }catch(e){}
+  NET.unsub=NET.ref.onSnapshot(onRemote, e=>{ if(online()){ G&&(G.lastMsg='Lost the connection to the game. Use Rejoin from the setup screen.',G.msgCls='bad'); G&&render(); } });
+}
+function onRemote(snap){
+  if(!snap.exists){ if(!NET.first){ leaveOnline(true); showSetup(); playMode='join'; syncPlayModes(); showErr('joinErr','That game no longer exists.'); } return; }
+  const d=snap.data(); const rev=d.rev||0;
+  if(NET.first&&rev<=NET.rev) return;          // our own write echoing back, or an older copy
+  NET.rev=rev; NET.status=d.status; 
+  let st; try{ st=JSON.parse(d.state); }catch(e){ return; }
+  const prevDice=G&&G.dice;
+  const keep=G&&G.ghost&&st.turn===NET.seat&&G.turn===st.turn&&st.dice&&G.dice&&st.dice[0]===G.dice[0]&&st.dice[1]===G.dice[1];
+  const ghost=keep?G.ghost:null;
+  G=migrate({...st}); G.ghost=ghost; G.history=[];
+  if(!st.dice) G.dice=null;
+  regionCache=null;
+  if(!NET.first){ NET.first=true; V=null; showGame(); }
+  else { render(); if(!prevDice&&G.dice) shakeDice(); }
+}
+function commit(){
+  save();
+  if(!online()||!NET.seat) return;
+  NET.rev+=1;
+  const body={state:packState(G), rev:NET.rev, status:G.over?'over':(NET.status==='waiting'?'waiting':'playing')};
+  NET.status=body.status;
+  NET.q=NET.q.then(()=>NET.ref.update(body)).catch(()=>{ G.lastMsg="Your move didn't reach the other phone. Check your connection."; G.msgCls='bad'; render(); });
+}
+function leaveOnline(keepSaved){
+  if(!online()) return;
+  NET.unsub?.(); NET.unsub=null; NET.ref=null; NET.code=null; NET.seat=0; NET.status=null;
+  if(!keepSaved){ try{ localStorage.removeItem(NETKEY); }catch(e){} }
+  const lg=load(); G=lg?migrate(lg):null; V=null;
+}
+function renderNet(){
+  const on=online(); $('netBar').hidden=!on; if(!on) return;
+  $('netCode').textContent=NET.code;
+  $('netDot').className='dot'+(NET.status==='waiting'?' wait':'');
+  $('netWho').textContent=NET.status==='waiting'?'Waiting for Player 2 to join':NET.seat?`You are ${nameOf(NET.seat)}`:'Watching';
+}
+function shakeDice(){ const d=$('dice'); d.classList.remove('roll-anim'); void d.offsetWidth; d.classList.add('roll-anim'); }
+
+window.claude?.hot?.snapshot?.(()=>online()?{net:{code:NET.code,seat:NET.seat},V,showBreak}:({G,V,showBreak,inGame:!$('game').hidden}));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+</body></html>

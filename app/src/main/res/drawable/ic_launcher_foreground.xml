@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graph paper with a blue claim from the top-left, a pink claim from the bottom-right,
+     and a golden square in the open gap. Safe zone: 18..90. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- paper -->
+    <path android:fillColor="#FFFFFF" android:pathData="M28,28h52v52h-52z" />
+    <!-- grid lines every 6.5 units -->
+    <path android:strokeColor="#C9D9E3" android:strokeWidth="0.8"
+        android:pathData="M34.5,28v52 M41,28v52 M47.5,28v52 M54,28v52 M60.5,28v52 M67,28v52 M73.5,28v52
+                          M28,34.5h52 M28,41h52 M28,47.5h52 M28,54h52 M28,60.5h52 M28,67h52 M28,73.5h52" />
+
+    <!-- Player 1 (blue) -->
+    <path android:fillColor="#2453C9"
+        android:pathData="M28,28h32.5v13h-6.5v13h-13v13h-13z" />
+    <!-- Player 2 (pink) -->
+    <path android:fillColor="#D6336C"
+        android:pathData="M80,80h-32.5v-13h6.5v-13h13v-13h13z" />
+    <!-- golden square -->
+    <path android:fillColor="#FBEEB8" android:pathData="M60.5,47.5h6.5v6.5h-6.5z" />
+    <path android:fillColor="#C99A06" android:pathData="M63.75,48.4l2.35,2.35l-2.35,2.35l-2.35,-2.35z" />
+
+    <!-- outline -->
+    <path android:strokeColor="#16232C" android:strokeWidth="1.6" android:fillColor="#00000000"
+        android:pathData="M28,28h52v52h-52z" />
+</vector>

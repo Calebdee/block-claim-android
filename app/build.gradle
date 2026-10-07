@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Each GitHub build gets a higher version number so a new APK installs over the old one.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
+
+android {
+    namespace 'com.blockclaim.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.blockclaim.app'
+        minSdk 26
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    // A fixed key kept in the repo, so every build is signed the same way and updates install cleanly.
+    // Fine for a personal sideloaded app; use a private key if you ever publish to the Play Store.
+    signingConfigs {
+        release {
+            storeFile file('blockclaim.keystore')
+            storePassword 'blockclaim'
+            keyAlias 'blockclaim'
+            keyPassword 'blockclaim'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
