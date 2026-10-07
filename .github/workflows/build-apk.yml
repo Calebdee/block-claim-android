@@ -12,14 +12,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      # GitHub's Ubuntu runners ship with the Android SDK; point Gradle at it and accept its licences.
+      - name: Use the runner's Android SDK
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "Android SDK: $SDK"
+          ls "$SDK"
+          echo "sdk.dir=$SDK" > local.properties
+          SDKM=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -n 1)
+          if [ -n "$SDKM" ]; then yes | "$SDKM" --licenses > /dev/null || true; fi
 
       - uses: gradle/actions/setup-gradle@v4
         with:
