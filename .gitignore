@@ -5,7 +5,8 @@ local.properties
 *.iml
 .idea/
 .DS_Store
-data/
+data/*
+!data/.gitkeep
 server/data/
 __pycache__/
 server/static/
