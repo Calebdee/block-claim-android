@@ -8,13 +8,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "game" / "block-claim.html"
 OUT = ROOT / "app" / "src" / "main" / "assets" / "index.html"
+# The Android app connects to this game server unless the player enters another one.
+DEFAULT_SERVER = "https://drive.johnsoncabin.com"
 
 HEAD = (
     '<!doctype html><html lang="en"><head><meta charset="utf-8">'
-    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+    '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
     "<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);"
     "padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif;"
-    "background:#f3f6f8}img{max-width:100%}[hidden]{display:none!important}</style></head><body>"
+    "background:#eef3f6}img{max-width:100%}[hidden]{display:none!important}</style>"
+    f"<script>window.BLOCKCLAIM_DEFAULT_SERVER={DEFAULT_SERVER!r};</script></head><body>"
 )
 
 OUT.parent.mkdir(parents=True, exist_ok=True)

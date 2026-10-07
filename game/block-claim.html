@@ -2,324 +2,442 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Chivo:wght@400;600;800&family=Chivo+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: one-column pass-and-play table — scores on top, graph-paper board in the middle, a "dice tray" control bar under it. */
+/* Layout: a one-screen phone app. Each screen is a column: app bar, flexible middle, bottom dock.
+   The game screen pins scores on top and controls at the bottom; only the board area flexes. */
 :root{
-  --paper:#f3f6f8; --paper-2:#ffffff; --line:#c9d9e3; --line-strong:#93b2c4;
-  --ink:#16232c; --muted:#5b6f7c;
-  --p1:#2453c9; --p1-soft:#c9d6f7; --p2:#d6336c; --p2-soft:#f8cfdd;
-  --bad:#b42318; --ok:#127a4a; --chip:#e4ecf1; --gold:#c99a06; --gold-soft:#fbeeb8;
+  --paper:#eef3f6; --surface:#ffffff; --surface-2:#f6f9fb; --line:#d3e0e8; --line-strong:#93b2c4;
+  --ink:#16232c; --muted:#5b6f7c; --on-ink:#ffffff;
+  --p1:#2453c9; --p1-soft:#d3defa; --p2:#d6336c; --p2-soft:#f9d5e2;
+  --bad:#b42318; --ok:#127a4a; --chip:#e2eaf0; --gold:#c99a06; --gold-soft:#fbeeb8;
+  --shadow:0 1px 2px rgba(22,35,44,.06),0 6px 20px rgba(22,35,44,.08);
   --f-display:"Bowlby One SC","Arial Black",Impact,sans-serif;
-  --f-body:"Chivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Chivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"Chivo Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:16px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0f171d; --paper-2:#162129; --line:#22323d; --line-strong:#3b5566;
-  --ink:#e6eef3; --muted:#91a7b5;
+  --paper:#0c1419; --surface:#152028; --surface-2:#1a2731; --line:#24343f; --line-strong:#3b5566;
+  --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
   --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1d2b35; --gold:#f5c842; --gold-soft:#4d3d0c; color-scheme:dark}}
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#f5c842; --gold-soft:#4d3d0c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#0f171d; --paper-2:#162129; --line:#22323d; --line-strong:#3b5566;
-  --ink:#e6eef3; --muted:#91a7b5;
+  --paper:#0c1419; --surface:#152028; --surface-2:#1a2731; --line:#24343f; --line-strong:#3b5566;
+  --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
   --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1d2b35; --gold:#f5c842; --gold-soft:#4d3d0c; color-scheme:dark}
-html,body{background:var(--paper);color:var(--ink)}
-body{font-family:var(--f-body);font-size:15px;line-height:1.45}
-.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:flex;flex-direction:column;gap:14px}
-h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,8vw,44px);line-height:1;margin:0;letter-spacing:.01em}
-h1 .x{color:var(--p2)} h1 .y{color:var(--p1)}
-.sub{color:var(--muted);margin:4px 0 0}
-.card{background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:16px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:460px){.grid2{grid-template-columns:1fr}}
-label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;text-transform:none;letter-spacing:0;min-width:0}
-fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-legend{font-family:var(--f-display);font-size:16px;margin-bottom:8px}
-.stack{display:flex;flex-direction:column;gap:18px}
-.hint{font-size:13px;color:var(--muted);margin:0;text-transform:none;letter-spacing:0;font-weight:400}
-button{font:inherit;font-weight:800;border-radius:10px;border:1px solid var(--line-strong);background:var(--chip);color:var(--ink);padding:11px 14px;cursor:pointer;touch-action:manipulation}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--p1);outline-offset:2px}
-button:disabled{opacity:.4;cursor:not-allowed}
-button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-button.go1{background:var(--p1);border-color:var(--p1);color:#fff}
-button.go2{background:var(--p2);border-color:var(--p2);color:#fff}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.row > *{flex:0 0 auto}
-.grow{flex:1 1 auto}
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#f5c842; --gold-soft:#4d3d0c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
 
-/* scoreboard */
-.score{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--paper);padding-block:6px}
-.pl{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;border:2px solid var(--line);background:var(--paper-2);min-width:0;text-align:left;font-weight:400}
-.pl.right{text-align:right;align-items:flex-end}
-.pl .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.pl .n{font-family:var(--f-mono);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.pl .br{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.pl .tag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bad)}
-.gem{color:var(--gold)}
+html{box-sizing:border-box;height:100%;overflow:hidden;background:var(--paper)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;overflow:hidden;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;
+  -webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+.app{height:100%;max-width:560px;margin:0 auto;position:relative}
+.screen{height:100%;display:flex;flex-direction:column;min-height:0}
+.scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 16px 24px}
+
+/* controls */
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.38;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--p1);outline-offset:2px}
+.cta{width:100%;min-height:56px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-weight:800;font-size:17px;letter-spacing:.01em}
+.cta.go1{background:var(--p1);color:#fff} .cta.go2{background:var(--p2);color:#fff}
+.cta:active:not(:disabled){transform:scale(.985)}
+.ghost{min-height:44px;padding:0 14px;border-radius:12px;background:var(--chip);font-weight:700}
+.icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto}
+.icon:active{background:var(--chip)}
+.icon svg{width:24px;height:24px}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:transparent;border:0;min-width:0}
+input::placeholder{color:var(--muted);opacity:.7}
+
+/* app bar */
+.appbar{display:flex;align-items:center;gap:4px;padding:8px 8px 4px;flex:0 0 auto}
+.appbar h2{margin:0;font-size:20px;font-weight:800}
+.dock{flex:0 0 auto;padding:10px 16px 14px;background:var(--paper)}
+
+/* home */
+.home .scroll{display:flex;flex-direction:column;gap:14px;padding-top:max(20px,4vh)}
+.brand{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 10px;text-align:center}
+.brand svg{width:96px;height:96px;filter:drop-shadow(0 6px 14px rgba(22,35,44,.15))}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:40px;line-height:1;margin:6px 0 0;letter-spacing:.01em}
+.brand h1 .a{color:var(--p1)} .brand h1 .b{color:var(--p2)}
+.brand p{margin:0;color:var(--muted)}
+.tile{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow);min-height:76px}
+.tile:active:not(:disabled){transform:scale(.99)}
+.tile .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto}
+.tile .ic svg{width:28px;height:28px}
+.tile .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .tt{font-weight:800;font-size:17px}
+.tile .ts{color:var(--muted);font-size:13.5px}
+.tile .chev{margin-left:auto;color:var(--muted);flex:0 0 auto}
+.ic.k1{background:var(--p1-soft);color:var(--p1)} .ic.k2{background:var(--p2-soft);color:var(--p2)} .ic.k3{background:var(--gold-soft);color:var(--gold)} .ic.k0{background:var(--chip);color:var(--ink)}
+.tile.feature{background:var(--ink);color:var(--on-ink)} .tile.feature .ts{color:inherit;opacity:.75} .tile.feature .chev{color:inherit}
+.tile.feature .ic{background:rgba(255,255,255,.14);color:inherit}
+.linkbtn{align-self:center;color:var(--muted);font-weight:600;padding:12px 16px;text-decoration:underline;text-underline-offset:3px}
+
+/* settings lists */
+.lede{color:var(--muted);margin:4px 2px 10px;font-size:14px}
+.gh{margin:18px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.group{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.lrow{display:flex;align-items:center;gap:12px;min-height:54px;padding:6px 16px;border-top:1px solid var(--line)}
+.group > .lrow:first-child,.group > [hidden] + .lrow{border-top:0}
+.lrow .lk{flex:0 0 auto;font-weight:600}
+.lrow input,.lrow select{flex:1 1 auto;text-align:right;padding:10px 0;text-overflow:ellipsis}
+.lrow select{appearance:none;-webkit-appearance:none;color:var(--muted);font-weight:600;cursor:pointer;text-align:right;text-align-last:right}
+.lrow .sel{flex:1 1 auto;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0;color:var(--muted)}
+.lrow .sel::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);flex:0 0 auto;opacity:.7}
+.lrow .sel select{flex:1 1 auto}
+.lrow.dims input{width:56px;flex:0 0 auto;text-align:center;background:var(--chip);border-radius:10px;padding:8px 4px}
+.lrow.dims .x{color:var(--muted)}
+.dotc{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
+.dotc.d1{background:var(--p1)} .dotc.d2{background:var(--p2)}
+.rowhint{margin:0;padding:0 16px 12px;color:var(--muted);font-size:13px}
+.err{color:var(--bad);font-size:14px;margin:12px 4px 0}
+.codein{display:block;width:100%;margin:6px 0 4px;padding:18px 12px;text-align:center;font-family:var(--f-mono);font-size:40px;font-weight:700;letter-spacing:.35em;text-indent:.35em;
+  text-transform:uppercase;background:var(--surface);border-radius:20px;box-shadow:var(--shadow)}
+
+/* game screen */
+.gbar{display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:stretch;gap:6px;padding:8px 10px 6px;flex:0 0 auto}
+.pl{display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:14px;background:var(--surface);border:2px solid transparent;min-width:0;text-align:left;box-shadow:var(--shadow)}
+.pl.p2{text-align:right;align-items:flex-end}
+.pl .nm{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pl .n{font-family:var(--f-mono);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05}
+.pl .br{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pl .lives{font-size:11px;letter-spacing:.08em;line-height:1;color:var(--muted)}
+.pl .tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bad)}
 .pl.p1 .nm,.pl.p1 .n{color:var(--p1)} .pl.p2 .nm,.pl.p2 .n{color:var(--p2)}
 .pl.p1.on{border-color:var(--p1);background:var(--p1-soft)} .pl.p2.on{border-color:var(--p2);background:var(--p2-soft)}
-.pl.out{opacity:.6}
-.mid{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;align-self:center}
-
-/* playing: the page becomes a fixed app — scores and board stay put, only the controls below scroll */
-html.playing,html.playing body{height:100%;overflow:hidden}
-html.playing .wrap{height:100%;box-sizing:border-box;padding-block:8px 0;gap:0}
-html.playing #game{height:100%;display:flex;flex-direction:column;gap:8px;min-height:0}
-html.playing #game > .fixed{flex:0 0 auto;display:flex;flex-direction:column;gap:8px}
-html.playing #game > .below{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
-html.playing .score{position:static;padding-block:0}
-
-/* board */
-.boardbox{position:relative;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper-2);overflow:hidden;height:55vh}
+.pl.out{opacity:.55}
+.gem{color:var(--gold)}
+.mid{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;line-height:1.25;min-width:44px}
+.mid b{font-size:13px;color:var(--ink)}
+.netbar{display:flex;align-items:center;gap:8px;margin:0 10px 6px;padding:6px 6px 6px 12px;border-radius:12px;background:var(--surface);font-size:12.5px;color:var(--muted);flex:0 0 auto}
+.netbar b{font-family:var(--f-mono);font-size:16px;letter-spacing:.18em;color:var(--ink)}
+.netbar .ghost{min-height:32px;padding:0 10px;font-size:12.5px}
+.netbar .who{flex:1 1 auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+.dot.wait{background:var(--gold)}
+.boardbox{position:relative;flex:1 1 auto;min-height:120px;margin:0 10px;border-radius:14px;overflow:hidden;background:var(--surface-2)}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
-.boardtools{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
-.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
-.seg button{border:0;border-radius:0;padding:6px 12px;font-size:14px;background:transparent}
-.seg button + button{border-left:1px solid var(--line-strong)}
+.zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:38px;height:38px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow);font-size:20px;font-weight:700;display:grid;place-items:center}
+.zoom svg{width:18px;height:18px}
 
-/* tray */
-.tray{display:flex;flex-direction:column;gap:12px}
-.dice{display:flex;gap:10px;align-items:center}
-.die{width:48px;height:48px;border-radius:10px;background:var(--paper);border:2px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:6px;gap:2px}
-.die i{border-radius:50%;background:var(--ink);visibility:hidden;margin:2px}
+.gdock{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.status{display:flex;align-items:center;gap:12px;min-height:52px}
+.dice{display:flex;gap:6px;flex:0 0 auto}
+.die{width:40px;height:40px;border-radius:10px;background:var(--surface);border:2px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:4px;gap:1px}
+.die i{border-radius:50%;background:var(--ink);visibility:hidden;margin:1.5px}
 .die i.on{visibility:visible}
-.die.empty{border-style:dashed;opacity:.45}
+.die.empty{border-style:dashed;opacity:.35}
 .roll-anim .die{animation:shake .35s ease}
 @keyframes shake{0%{transform:rotate(0)}30%{transform:rotate(-14deg) translateY(-3px)}60%{transform:rotate(10deg)}100%{transform:rotate(0)}}
-@media (prefers-reduced-motion:reduce){.roll-anim .die{animation:none}}
-.blocksize{font-family:var(--f-mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
-.msg{font-size:14px;min-height:1.4em}
+.stxt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.blocksize{font-family:var(--f-mono);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.blocksize:empty{display:none}
+.msg{margin:0;font-size:13.5px;line-height:1.3;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)}
-.placegrp{display:flex;flex-direction:column;gap:8px}
-.pad{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr)) minmax(90px,1.6fr);gap:6px}
-.pad button{padding:0;height:48px;font-size:20px}
-.pad #placeBtn{font-size:16px}
-.lives{font-size:13px;letter-spacing:.1em;line-height:1}
-.manual{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
-.manual select{width:70px}
+.controls{height:112px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.pad{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr;gap:6px}
+.pad button,.row2 button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-size:20px;font-weight:700}
+.pad #placeBtn{font-size:16px;font-weight:800;color:#fff;background:var(--ink)}
+.pad #placeBtn.go1{background:var(--p1)} .pad #placeBtn.go2{background:var(--p2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.row2 button{height:44px;font-size:14.5px;font-weight:700}
+.manual{display:flex;gap:8px;align-items:center}
+.manual select{flex:1;height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);text-align:center;font-weight:700;font-size:18px}
+.manual .ghost{height:52px;flex:1.4}
+.controls .cta{min-height:64px;font-size:19px}
 
-/* end */
-.over{text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
-.over h2{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0;line-height:1.05;text-wrap:balance}
-.over table{border-collapse:collapse;font-variant-numeric:tabular-nums}
-.over td,.over th{padding:4px 12px;text-align:right;border-bottom:1px solid var(--line)}
-.over th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.over td:first-child,.over th:first-child{text-align:left}
-/* play-mode switch and online bar */
-.modes{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
-.modes button{border:0;border-radius:0;background:transparent;padding:12px 6px;font-size:14px}
-.modes button + button{border-left:1px solid var(--line-strong)}
-.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
-.codein{font-family:var(--f-mono);font-size:22px;letter-spacing:.3em;text-transform:uppercase}
-.netbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding:8px 12px;border:1px dashed var(--line-strong);border-radius:10px}
-.netbar b{font-family:var(--f-mono);font-size:18px;letter-spacing:.2em;color:var(--ink)}
-.netbar button{padding:6px 10px;font-size:13px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
-.dot.wait{background:var(--gold)}
-.err{color:var(--bad);font-size:14px;margin:0}
-details{font-size:14px} summary{cursor:pointer;font-weight:600}
-details ul{margin:8px 0 0;padding-left:20px;color:var(--muted)}
+/* sheets */
+.sheetwrap{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:absolute;inset:0;background:rgba(8,14,18,.45);animation:fade .2s ease}
+.sheet{position:relative;width:100%;max-width:560px;max-height:88%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;
+  padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;animation:up .24s cubic-bezier(.2,.9,.3,1)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line-strong);align-self:center;margin-bottom:4px}
+.sheet h3{margin:0 0 2px;font-size:19px;font-weight:800}
+.sheet .item{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 6px;border-radius:12px;font-weight:700;text-align:left;width:100%}
+.sheet .item:active:not(:disabled){background:var(--chip)}
+.sheet .item svg{width:22px;height:22px;color:var(--muted)}
+.sheet .item.danger{color:var(--bad)} .sheet .item.danger svg{color:var(--bad)}
+.confirm{background:var(--surface-2);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.confirm p{margin:0;font-size:14px}
+.confirm .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.confirm .two button{min-height:46px;border-radius:12px;font-weight:800}
+.confirm .yes{background:var(--bad);color:#fff} .confirm .no{background:var(--chip)}
+.rules{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:8px;font-size:14.5px}
+.rules b{color:var(--ink)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* results */
+.result{align-items:stretch;text-align:center;gap:12px}
+.trophy{font-family:var(--f-display);font-size:13px;letter-spacing:.14em;color:var(--muted)}
+.result h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.05;margin:0;text-wrap:balance}
+.result h2.w1{color:var(--p1)} .result h2.w2{color:var(--p2)}
+.result .why{margin:0;color:var(--muted);font-size:14px}
+.result table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
+.result td,.result th{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line)}
+.result th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.result td:first-child,.result th:first-child{text-align:left;font-weight:700}
+.result .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.result .btns .cta{grid-column:1/-1}
+.result .ghost{min-height:48px}
+
+@media (prefers-reduced-motion:reduce){.roll-anim .die,.sheet,.scrim{animation:none}}
+@media (min-width:600px){.app{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
 </style>
 
-<div class="wrap">
-  <header id="hdr">
-    <h1>Block <span class="x">Cl</span><span class="y">aim</span></h1>
-    <p class="sub">Roll two dice, place your block, wall off the paper.</p>
+<div class="app">
+
+<!-- HOME -->
+<section id="home" class="screen home">
+  <div class="scroll">
+    <div class="brand">
+      <svg viewBox="0 0 52 52" aria-hidden="true">
+        <rect width="52" height="52" rx="12" fill="var(--surface)"/>
+        <path d="M6.5 6h39M6.5 12.5h39M6.5 19h39M6.5 25.5h39M6.5 32h39M6.5 38.5h39M6.5 45h39M6 6.5v39M12.5 6v39M19 6v39M25.5 6v39M32 6v39M38.5 6v39M45 6v39" stroke="var(--line)" stroke-width=".8"/>
+        <path d="M6 6h26v6.5h-6.5v6.5h-6.5v6.5h-6.5v6.5H6z" fill="var(--p1)"/>
+        <path d="M46 46H20v-6.5h6.5V33H33v-6.5h6.5V20H46z" fill="var(--p2)"/>
+        <rect x="32.5" y="13" width="6" height="6" fill="var(--gold-soft)"/>
+        <path d="M35.5 13.6l2.4 2.4-2.4 2.4-2.4-2.4z" fill="var(--gold)"/>
+      </svg>
+      <h1>Block <span class="a">Cl</span><span class="b">aim</span></h1>
+      <p>Roll two dice. Claim the paper.</p>
+    </div>
+
+    <button class="tile feature" id="resume" hidden>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l11 7-11 7z"/></svg></span>
+      <span class="tx"><span class="tt">Continue game</span><span class="ts" id="resumeInfo"></span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button class="tile feature" id="rejoin" hidden>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/></svg></span>
+      <span class="tx"><span class="tt" id="rejoinTitle">Rejoin online game</span><span class="ts">Pick up where you left off</span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <button class="tile" id="pmLocal">
+      <span class="ic k1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M6 12h12" stroke-dasharray="2 2"/></svg></span>
+      <span class="tx"><span class="tt">Pass &amp; play</span><span class="ts">One phone, two players. Works offline.</span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button class="tile" id="pmHost">
+      <span class="ic k2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
+      <span class="tx"><span class="tt">Host online</span><span class="ts">Start a game and share a 4-letter code.</span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button class="tile" id="pmJoin">
+      <span class="ic k3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M3 12h12M11 8l4 4-4 4"/></svg></span>
+      <span class="tx"><span class="tt">Join online</span><span class="ts">Enter the code from the host's phone.</span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button class="linkbtn" id="howBtn">How to play</button>
+  </div>
+</section>
+
+<!-- NEW GAME (pass & play or host) -->
+<section id="setup" class="screen" hidden>
+  <header class="appbar">
+    <button class="icon" id="setupBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <h2 id="setupTitle">Pass &amp; play</h2>
   </header>
+  <div class="scroll">
+    <p class="lede" id="setupLede"></p>
+    <div id="serverSlotHost"></div>
+    <h3 class="gh">Players</h3>
+    <div class="group">
+      <label class="lrow" for="n1"><span class="dotc d1"></span><span class="lk">Player 1</span><input id="n1" value="Player 1" maxlength="18" autocomplete="off"></label>
+      <label class="lrow" for="n2" id="n2Wrap"><span class="dotc d2"></span><span class="lk">Player 2</span><input id="n2" value="Player 2" maxlength="18" autocomplete="off"></label>
+    </div>
+    <h3 class="gh">Game</h3>
+    <div class="group">
+      <label class="lrow" for="mode"><span class="lk">Mode</span><span class="sel"><select id="mode">
+        <option value="classic" selected>Classic</option>
+        <option value="power">Power Squares</option>
+      </select></span></label>
+      <label class="lrow" for="golds" id="goldsWrap" hidden><span class="lk">Golden squares</span><input id="golds" type="number" min="1" max="60" value="7" inputmode="numeric"></label>
+      <p class="rowhint" id="goldsHint" hidden>Only golden squares score. They're placed at random but mirrored, so both corners face the same layout.</p>
+      <label class="lrow" for="preset"><span class="lk">Board</span><span class="sel"><select id="preset">
+        <option value="25x25" selected>Standard 25 × 25</option>
+        <option value="20x20">Short 20 × 20</option>
+        <option value="30x30">Long 30 × 30</option>
+        <option value="21x29">A4, 1 cm 21 × 29</option>
+        <option value="38x54">A4, 5 mm 38 × 54</option>
+        <option value="42x59">A4 full 42 × 59</option>
+        <option value="custom">Custom</option>
+      </select></span></label>
+      <div class="lrow dims" id="customRow" hidden><span class="lk">Size</span><span class="grow" style="flex:1"></span>
+        <input id="gw" type="number" min="8" max="120" value="25" inputmode="numeric" aria-label="Width"><span class="x">×</span>
+        <input id="gh" type="number" min="8" max="160" value="25" inputmode="numeric" aria-label="Height"></div>
+    </div>
+    <h3 class="gh">Rules</h3>
+    <div class="group">
+      <label class="lrow" for="endRule"><span class="lk">Game ends</span><span class="sel"><select id="endRule">
+        <option value="sealed" selected>No disputed space left</option>
+        <option value="rounds">After set rounds</option>
+        <option value="target">At a share of the board</option>
+      </select></span></label>
+      <label class="lrow" for="rounds" id="roundsWrap" hidden><span class="lk">Rounds</span><input id="rounds" type="number" min="1" max="500" value="20" inputmode="numeric"></label>
+      <label class="lrow" for="target" id="targetWrap" hidden><span class="lk">Share to win (%)</span><input id="target" type="number" min="5" max="95" value="50" inputmode="numeric"></label>
+      <label class="lrow" for="noFit"><span class="lk">Roll won't fit</span><span class="sel"><select id="noFit">
+        <option value="out" selected>Lose a life</option>
+        <option value="pass">Skip the turn</option>
+      </select></span></label>
+      <label class="lrow" for="lives" id="livesWrap"><span class="lk">Lives</span><input id="lives" type="number" min="1" max="20" value="3" inputmode="numeric"></label>
+      <label class="lrow" for="stall" id="stallWrap" hidden><span class="lk">End after passes in a row</span><input id="stall" type="number" min="0" max="50" value="8" inputmode="numeric"></label>
+      <label class="lrow" for="scoring"><span class="lk">Sealed space</span><span class="sel"><select id="scoring">
+        <option value="fill" selected>Fills in, counts</option>
+        <option value="territory">Stays open, counts</option>
+        <option value="placed">Doesn't count</option>
+      </select></span></label>
+      <label class="lrow" for="diceMode"><span class="lk">Dice</span><span class="sel"><select id="diceMode">
+        <option value="app" selected>Roll in the app</option>
+        <option value="manual">Real dice</option>
+      </select></span></label>
+    </div>
+    <p class="err" id="hostErr" hidden></p>
+  </div>
+  <footer class="dock"><button id="start" class="cta">Start game</button></footer>
+</section>
 
-  <!-- SETUP -->
-  <section id="setup" class="stack">
-    <div class="card stack">
-      <fieldset>
-        <legend>Play</legend>
-        <div class="modes" role="group" aria-label="How to play">
-          <button id="pmLocal" aria-pressed="true">One phone</button>
-          <button id="pmHost" aria-pressed="false">Host online</button>
-          <button id="pmJoin" aria-pressed="false">Join online</button>
-        </div>
-        <p class="hint" id="playHint">Pass one phone back and forth. Works offline.</p>
-        <div class="stack" id="serverWrap" hidden>
-          <label for="serverUrl">Game server<input id="serverUrl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="192.168.1.20:8787"></label>
-          <div class="row"><button id="testServer">Test connection</button><span class="hint grow">The address of your Block Claim server. Both players use the same one.</span></div>
-          <p class="err" id="serverErr" hidden></p>
-        </div>
-        <button id="rejoin" hidden></button>
-      </fieldset>
-      <div class="stack" id="joinBox" hidden>
-        <label for="joinCode">Game code<input id="joinCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD"></label>
-        <label for="joinName">Your name<input id="joinName" value="Player 2" maxlength="18"></label>
-        <button id="joinBtn" class="primary">Join game</button>
-        <p class="err" id="joinErr" hidden></p>
-      </div>
+<!-- JOIN -->
+<section id="joinScreen" class="screen" hidden>
+  <header class="appbar">
+    <button class="icon" id="joinBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <h2>Join online</h2>
+  </header>
+  <div class="scroll">
+    <p class="lede">Type the code from the host's screen. You'll play from the bottom-right corner.</p>
+    <input id="joinCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Game code">
+    <h3 class="gh">You</h3>
+    <div class="group">
+      <label class="lrow" for="joinName"><span class="dotc d2"></span><span class="lk">Name</span><input id="joinName" value="Player 2" maxlength="18" autocomplete="off"></label>
     </div>
-    <div class="card stack" id="setupCard">
-      <fieldset>
-        <legend>Players</legend>
-        <div class="grid2">
-          <label for="n1">Player 1 · top-left<input id="n1" value="Player 1" maxlength="18"></label>
-          <label for="n2" id="n2Wrap">Player 2 · bottom-right<input id="n2" value="Player 2" maxlength="18"></label>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Grid</legend>
-        <label for="preset">Size
-          <select id="preset">
-            <option value="25x25" selected>Standard — 25 × 25</option>
-            <option value="42x59">A4 sheet, 5 mm squares — 42 × 59</option>
-            <option value="38x54">A4 printed grid, 5 mm with margins — 38 × 54</option>
-            <option value="21x29">A4 sheet, 1 cm squares — 21 × 29</option>
-            <option value="30x30">Quick game — 30 × 30</option>
-            <option value="20x20">Short game — 20 × 20</option>
-            <option value="custom">Custom…</option>
-          </select>
-        </label>
-        <div class="grid2">
-          <label for="gw">Width (squares)<input id="gw" type="number" min="8" max="120" value="25" inputmode="numeric"></label>
-          <label for="gh">Height (squares)<input id="gh" type="number" min="8" max="160" value="25" inputmode="numeric"></label>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Game mode</legend>
-        <label for="mode">Mode
-          <select id="mode">
-            <option value="classic" selected>Classic — most squares wins</option>
-            <option value="power">Power Squares — capture the golden squares</option>
-          </select>
-        </label>
-        <label for="golds" id="goldsWrap" hidden>Golden squares<input id="golds" type="number" min="1" max="60" value="7" inputmode="numeric"></label>
-        <p class="hint" id="goldsHint" hidden>Golden squares are scattered at random but mirrored across the board, so each player gets the same layout from their corner. An odd number puts one in the centre, which keeps ties unlikely.</p>
-      </fieldset>
-      <fieldset>
-        <legend>Rules</legend>
-        <label for="endRule">Game ends when
-          <select id="endRule">
-            <option value="sealed" selected>No disputed space is left</option>
-            <option value="rounds">A set number of rounds is played</option>
-            <option value="target">A player claims a share of the paper</option>
-          </select>
-        </label>
-        <label for="rounds" id="roundsWrap" hidden>Rounds<input id="rounds" type="number" min="1" max="500" value="20" inputmode="numeric"></label>
-        <label for="target" id="targetWrap" hidden>Share to win (%)<input id="target" type="number" min="5" max="95" value="50" inputmode="numeric"></label>
-        <label for="noFit">If a roll can't be placed
-          <select id="noFit">
-            <option value="out" selected>Lose a life; out at zero, the other plays on</option>
-            <option value="pass">Lose the turn only</option>
-          </select>
-        </label>
-        <label for="lives" id="livesWrap">Lives per player<input id="lives" type="number" min="1" max="20" value="3" inputmode="numeric"></label>
-        <label for="stall" id="stallWrap" hidden>End after this many passes in a row (0 = never)<input id="stall" type="number" min="0" max="50" value="8" inputmode="numeric"></label>
-        <label for="scoring">Score counts
-          <select id="scoring">
-            <option value="fill" selected>Placed + sealed space, which fills in with your colour</option>
-            <option value="territory">Placed + sealed space, left open on the board</option>
-            <option value="placed">Placed squares only</option>
-          </select>
-        </label>
-        <label for="diceMode">Dice
-          <select id="diceMode">
-            <option value="app" selected>Roll in the app</option>
-            <option value="manual">I'll roll real dice and enter them</option>
-          </select>
-        </label>
-      </fieldset>
-      <button id="start" class="primary">Start game</button>
-      <p class="err" id="hostErr" hidden></p>
-      <button id="resume" hidden>Resume saved game</button>
-    </div>
-    <details class="card">
-      <summary>How to play</summary>
-      <ul>
-        <li>Player 1's first block must cover the top-left square; Player 2's must cover the bottom-right.</li>
-        <li>On your turn, roll two dice. A 4 and a 3 gives a 4×3 block; rotate it either way.</li>
-        <li>Every later block must share an edge with one of your own blocks. No overlaps, no hanging off the paper.</li>
-        <li>If your roll can't fit anywhere, you lose a life (3 by default). At zero lives you're out and your opponent keeps rolling.</li>
-        <li>Empty space only you can reach is sealed: it fills in with your colour and counts toward your score.</li>
-        <li>The game ends when no empty space can be reached by both players, or when both are out. Empty space only you can reach counts as yours.</li>
-        <li>Power Squares mode: only golden squares score. Capture one by covering it with a block or sealing it inside your space. Most gold wins; total squares break a tie.</li>
-        <li>Online: one player picks Host online and shares the 4-letter code; the other picks Join online and types it in. Each phone can only move on its own turn.</li>
-        <li>Board: pinch to zoom, drag to look around. Tap to drop your block, drag it to move it, double-tap to rotate. Confirm with Place.</li>
-      </ul>
-    </details>
-  </section>
+    <div id="serverSlotJoin"></div>
+    <p class="err" id="joinErr" hidden></p>
+  </div>
+  <footer class="dock"><button id="joinBtn" class="cta">Join game</button></footer>
+</section>
 
-  <!-- GAME -->
-  <section id="game" class="stack" hidden>
-   <div class="fixed">
-    <div class="score">
-      <button class="pl p1" id="pl1" aria-expanded="false"><span class="nm" id="nm1"></span><span class="n" id="sc1"></span><span class="br" id="br1" hidden></span><span class="lives" id="lv1"></span><span class="tag" id="out1" hidden>Out</span></button>
-      <div class="mid" id="midinfo"></div>
-      <button class="pl p2 right" id="pl2" aria-expanded="false"><span class="nm" id="nm2"></span><span class="n" id="sc2"></span><span class="br" id="br2" hidden></span><span class="lives" id="lv2"></span><span class="tag" id="out2" hidden>Out</span></button>
-    </div>
+<!-- server address block; moved into Host or Join as needed -->
+<div id="serverWrap" hidden>
+  <h3 class="gh">Game server</h3>
+  <div class="group">
+    <label class="lrow" for="serverUrl"><span class="lk">Address</span><input id="serverUrl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="192.168.1.20:8787"></label>
+    <div class="lrow"><span class="hint grow" style="flex:1;color:var(--muted);font-size:13px">Both players use the same server.</span><button id="testServer" class="ghost">Test</button></div>
+  </div>
+  <p class="err" id="serverErr" hidden></p>
+</div>
 
-    <div class="boardtools">
-      <span id="boardlabel"></span>
-      <span class="seg" role="group" aria-label="Zoom">
-        <button id="zout" aria-label="Zoom out">−</button><button id="zfit">Fit</button><button id="zin" aria-label="Zoom in">+</button>
-      </span>
+<!-- GAME -->
+<section id="game" class="screen" hidden>
+  <header class="gbar">
+    <button class="icon" id="menuBtn" aria-label="Game menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="pl p1" id="pl1" aria-expanded="false"><span class="nm" id="nm1"></span><span class="n" id="sc1"></span><span class="br" id="br1" hidden></span><span class="lives" id="lv1"></span><span class="tag" id="out1" hidden>Out</span></button>
+    <div class="mid" id="midinfo"></div>
+    <button class="pl p2" id="pl2" aria-expanded="false"><span class="nm" id="nm2"></span><span class="n" id="sc2"></span><span class="br" id="br2" hidden></span><span class="lives" id="lv2"></span><span class="tag" id="out2" hidden>Out</span></button>
+  </header>
+  <div class="netbar" id="netBar" hidden>
+    <span class="dot" id="netDot"></span><span>Code</span><b id="netCode"></b>
+    <button id="copyCode" class="ghost">Copy</button>
+    <span class="who" id="netWho"></span>
+  </div>
+  <div class="boardbox" id="boardbox">
+    <canvas id="cv" aria-label="Game board. Tap to drop the block, drag it to move, double-tap to rotate, pinch to zoom."></canvas>
+    <div class="zoom">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">−</button>
+      <button id="zfit" aria-label="Fit board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
-    <div class="boardbox" id="boardbox"><canvas id="cv" aria-label="Game board. Tap to drop the block, drag it to move, double-tap to rotate, pinch to zoom."></canvas></div>
-   </div>
-   <div class="below" id="below">
-    <div class="netbar" id="netBar" hidden>
-      <span class="dot" id="netDot"></span>
-      <span>Game code</span><b id="netCode"></b>
-      <button id="copyCode">Copy</button>
-      <span id="netWho" class="grow"></span>
+  </div>
+  <div class="dock gdock" id="tray">
+    <div class="status">
+      <div class="dice" id="dice"></div>
+      <div class="stxt"><div class="blocksize" id="blocksize"></div><p class="msg" id="msg"></p></div>
     </div>
-
-    <div class="card tray" id="tray">
-      <div class="row">
-        <div class="dice" id="dice"></div>
-        <div class="blocksize" id="blocksize"></div>
-        <div class="grow"></div>
-        <button id="rollBtn" class="go1">Roll</button>
-      </div>
+    <div class="controls">
       <div class="manual" id="manualRow" hidden>
-        <label for="m1">Die 1<select id="m1"></select></label>
-        <label for="m2">Die 2<select id="m2"></select></label>
-        <button id="useRoll">Use roll</button>
+        <select id="m1" aria-label="Die 1"></select><select id="m2" aria-label="Die 2"></select>
+        <button id="useRoll" class="ghost">Use roll</button>
       </div>
-      <div class="msg" id="msg"></div>
-      <div class="placegrp" id="placeRow" hidden>
+      <div id="placeRow" hidden>
         <div class="pad" aria-label="Move block">
           <button data-dx="-1" data-dy="0" aria-label="Left">←</button>
           <button data-dx="0" data-dy="-1" aria-label="Up">↑</button>
           <button data-dx="0" data-dy="1" aria-label="Down">↓</button>
           <button data-dx="1" data-dy="0" aria-label="Right">→</button>
-          <button id="placeBtn" class="primary">Place</button>
+          <button id="placeBtn">Place</button>
         </div>
-        <div class="row">
-          <button id="rotBtn" class="grow">Rotate</button>
-          <button id="sugBtn" class="grow">Find a spot</button>
+        <div class="row2" style="margin-top:8px">
+          <button id="rotBtn">Rotate</button>
+          <button id="sugBtn">Find a spot</button>
         </div>
       </div>
-      <div class="row">
-        <button id="undoBtn">Undo</button>
-        <div class="grow"></div>
-        <button id="quitBtn">End game…</button>
-      </div>
-      <div class="row" id="quitConfirm" hidden>
-        <span class="hint grow">End now and score the board as it stands?</span>
-        <button id="quitYes" class="primary">End & score</button>
-        <button id="quitNo">Keep playing</button>
-        <button id="quitSetup">Back to setup</button>
-      </div>
+      <button id="rollBtn" class="cta">Roll</button>
     </div>
+  </div>
+</section>
 
-    <div class="card over" id="over" hidden>
-      <h2 id="winner"></h2>
-      <p class="hint" id="overwhy"></p>
-      <table>
-        <thead><tr id="overhead"><th></th><th>Placed</th><th>Controlled</th><th>Total</th></tr></thead>
-        <tbody id="overtable"></tbody>
-      </table>
-      <div class="row" style="justify-content:center">
-        <button id="rematch" class="primary">Rematch</button>
-        <button id="newSetup">New setup</button>
-      </div>
+<!-- MENU SHEET -->
+<div class="sheetwrap" id="menuSheet" hidden>
+  <div class="scrim" data-close></div>
+  <div class="sheet" role="dialog" aria-label="Game menu">
+    <div class="grab"></div>
+    <h3>Game menu</h3>
+    <button class="item" id="undoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo last move</button>
+    <button class="item" id="howBtn2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg>How to play</button>
+    <button class="item" id="quitBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>End game and score</button>
+    <div class="confirm" id="quitConfirm" hidden>
+      <p>End now and score the board as it stands?</p>
+      <div class="two"><button class="no" id="quitNo">Keep playing</button><button class="yes" id="quitYes">End game</button></div>
     </div>
-   </div>
-  </section>
+    <button class="item danger" id="quitSetup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span id="leaveLabel">Back to home</span></button>
+    <button class="ghost" data-close style="min-height:50px">Close</button>
+  </div>
+</div>
+
+<!-- RESULTS SHEET -->
+<div class="sheetwrap" id="overSheet" hidden>
+  <div class="scrim"></div>
+  <div class="sheet result" role="dialog" aria-label="Results">
+    <div class="grab"></div>
+    <div class="trophy">GAME OVER</div>
+    <h2 id="winner"></h2>
+    <p class="why" id="overwhy"></p>
+    <table>
+      <thead><tr id="overhead"><th></th><th>Placed</th><th>Controlled</th><th>Total</th></tr></thead>
+      <tbody id="overtable"></tbody>
+    </table>
+    <div class="btns">
+      <button id="rematch" class="cta">Rematch</button>
+      <button id="seeBoard" class="ghost">See board</button>
+      <button id="newSetup" class="ghost">Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY SHEET -->
+<div class="sheetwrap" id="rulesSheet" hidden>
+  <div class="scrim" data-close></div>
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <div class="grab"></div>
+    <h3>How to play</h3>
+    <ol class="rules">
+      <li><b>Corners.</b> Player 1's first block covers the top-left square; Player 2's covers the bottom-right.</li>
+      <li><b>Roll.</b> Two dice make your block: a 4 and a 3 is a 4×3, either way round.</li>
+      <li><b>Place.</b> Every block after the first must share an edge with one of yours. No overlaps, nothing off the paper.</li>
+      <li><b>Board.</b> Tap to drop the block, drag it to move, double-tap to rotate, pinch to zoom. Tap Place to confirm.</li>
+      <li><b>No fit?</b> You lose a life (3 by default). At zero you're out and your opponent plays on.</li>
+      <li><b>Sealed space.</b> Empty space only you can reach fills in with your colour and counts as yours.</li>
+      <li><b>End.</b> When no space is left that both players can reach, or both are out. Most squares wins.</li>
+      <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it.</li>
+      <li><b>Online.</b> Host shares a 4-letter code; the other player joins with it. Each phone moves on its own turn.</li>
+    </ol>
+    <button class="ghost" data-close style="min-height:50px">Got it</button>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -332,8 +450,8 @@ let showBreak=false;
 
 /* ---------- setup ---------- */
 const preset=$('preset'),gw=$('gw'),gh=$('gh');
-preset.onchange=()=>{ if(preset.value!=='custom'){const[a,b]=preset.value.split('x');gw.value=a;gh.value=b;} };
-[gw,gh].forEach(i=>i.oninput=()=>{preset.value='custom'});
+preset.onchange=()=>{ if(preset.value!=='custom'){const[a,b]=preset.value.split('x');gw.value=a;gh.value=b;} $('customRow').hidden=preset.value!=='custom'; };
+[gw,gh].forEach(i=>i.oninput=()=>{preset.value='custom'; $('customRow').hidden=false;});
 function syncRuleFields(){const v=$('endRule').value;$('roundsWrap').hidden=v!=='rounds';$('targetWrap').hidden=v!=='target';$('stallWrap').hidden=$('noFit').value!=='pass';$('livesWrap').hidden=$('noFit').value!=='out';const pw=$('mode').value==='power';$('goldsWrap').hidden=!pw;$('goldsHint').hidden=!pw;}
 $('mode').onchange=syncRuleFields;
 $('endRule').onchange=syncRuleFields; $('noFit').onchange=syncRuleFields;
@@ -581,11 +699,7 @@ function undo(){
 /* ---------- board view: pinch zoom, pan, tap, double-tap, drag ---------- */
 const cv=$('cv'), box=$('boardbox');
 function boxSize(){ return {w:box.clientWidth, h:box.clientHeight}; }
-function layoutBox(){
-  // Fit the box to the board's shape, capped at 62% of the screen height
-  const w=box.clientWidth; const ideal=w*G.S.H/G.S.W;
-  box.style.height=Math.round(Math.max(200,Math.min(ideal,window.innerHeight*0.56)))+'px';
-}
+function layoutBox(){}   // the board area is sized by the screen layout
 function fitScale(){ const b=boxSize(); return Math.min(b.w/G.S.W, b.h/G.S.H); }
 function maxScale(){ return Math.max(fitScale()*2, 56); }
 function fitView(){ const b=boxSize(), s=fitScale(); V={s, ox:(b.w-G.S.W*s)/2, oy:(b.h-G.S.H*s)/2}; }
@@ -760,6 +874,9 @@ function draw(){
   }
 }
 let rz=0;
+// Refit when the board area changes size (rotation, keyboard, browser bars).
+if(window.ResizeObserver){ let lastW=0,lastH=0; new ResizeObserver(()=>{ const b=boxSize(); if(!G||$('game').hidden||!b.w) return; if(b.w===lastW&&b.h===lastH) return;
+  const wasFit=V&&Math.abs(V.s-Math.min(lastW/G.S.W,lastH/G.S.H))<1e-3; lastW=b.w; lastH=b.h; if(!V||wasFit) fitView(); draw(); }).observe(box); }
 window.addEventListener('resize',()=>{ cancelAnimationFrame(rz); rz=requestAnimationFrame(()=>{ if(G&&!$('game').hidden){ const was=V&&Math.abs(V.s-fitScale())<1e-3; layoutBox(); if(!V||was) fitView(); draw(); }}); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>draw());
 new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
@@ -782,13 +899,12 @@ function render(){
   $('lv1').setAttribute('aria-label',`${G.lives[1]} lives`); $('lv2').setAttribute('aria-label',`${G.lives[2]} lives`);
   $('pl1').classList.toggle('out',G.out[1]); $('pl2').classList.toggle('out',G.out[2]);
   $('pl1').classList.toggle('on',!G.over&&G.turn===1); $('pl2').classList.toggle('on',!G.over&&G.turn===2);
-  const rLabel=S.endRule==='rounds'?`Round ${Math.min(G.round,S.rounds)}/${S.rounds}`:`Round ${G.round}`;
-  $('midinfo').innerHTML=sc.power?`${rLabel}<br>${sc.gfree} of ${G.gold.length} gold free`:`${rLabel}<br>${sc.disputed} open`;
-  $('boardlabel').textContent=`${S.W} × ${S.H} · pinch or +/− to zoom`;
+  const rLabel=S.endRule==='rounds'?`R${Math.min(G.round,S.rounds)}/${S.rounds}`:`R${G.round}`;
+  $('midinfo').innerHTML=sc.power?`<b>${rLabel}</b><span>${sc.gfree}◆ free</span>`:`<b>${rLabel}</b><span>${sc.disputed} open</span>`;
   $('dice').innerHTML=dieHTML(G.dice?.[0])+dieHTML(G.dice?.[1]);
   $('blocksize').textContent=G.dice?`${G.dice[0]}×${G.dice[1]}`:'';
   const who=nameOf(G.turn), manual=S.diceMode==='manual';
-  const rb=$('rollBtn'); rb.className=G.turn===1?'go1':'go2';
+  const rb=$('rollBtn'); rb.className='cta '+(G.turn===1?'go1':'go2');
   if(G.dice&&G.noFit){
     const other=G.turn===1?2:1;
     rb.textContent=G.out[other]?'Continue':`Continue to ${nameOf(other)}`; rb.hidden=false; rb.disabled=false;
@@ -798,6 +914,8 @@ function render(){
   $('manualRow').hidden=!manual||!!G.dice||!!G.over||!mine;
   $('placeRow').hidden=!G.dice||G.noFit||!!G.over||!mine;
   $('placeBtn').className=G.turn===1?'go1':'go2';
+  if(!$('placeRow').hidden||!$('manualRow').hidden) rb.hidden=true;
+  if(G.over){ rb.hidden=false; rb.disabled=false; rb.className='cta'; rb.textContent='See results'; }
   $('placeBtn').disabled=!G.ghost;
   $('rotBtn').disabled=!G.ghost||G.dice[0]===G.dice[1];
   document.querySelectorAll('.pad button').forEach(b=>b.disabled=!G.ghost);
@@ -817,19 +935,22 @@ function render(){
   } else
   m.textContent=G.lastMsg||(G.dice?'':`${who}'s turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
   m.className='msg '+(G.msgCls||'');
-  $('tray').hidden=!!G.over; $('over').hidden=!G.over;
+  $('overSheet').hidden=!G.over||overHidden;
   $('rematch').hidden=online()&&!NET.seat;
+  $('leaveLabel').textContent=online()?'Leave game':'Back to home';
   if(G.over){
     if(sc.power){
       const tie=sc.g1===sc.g2, tb=tie&&sc.sq1!==sc.sq2;
       const win=tie?(tb?(sc.sq1>sc.sq2?1:2):0):(sc.g1>sc.g2?1:2);
       $('winner').textContent=win?`${nameOf(win)} wins, ${Math.max(sc.g1,sc.g2)} gold to ${Math.min(sc.g1,sc.g2)}`:`It's a tie, ${sc.g1} gold each`;
+      $('winner').className=win?'w'+win:'';
       $('overwhy').textContent=G.over.why+(tb?' Gold was level, so total squares decided it.':'')+(sc.gfree?` ${sc.gfree} golden square${sc.gfree>1?'s were':' was'} never captured.`:'');
       $('overhead').innerHTML='<th></th><th>Gold</th><th>Squares</th>';
       $('overtable').innerHTML=[[S.n1,sc.g1,sc.sq1],[S.n2,sc.g2,sc.sq2]].map(r=>`<tr><td>${esc(r[0])}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
     } else {
       const w=sc.t1===sc.t2?"It's a tie":`${sc.t1>sc.t2?S.n1:S.n2} wins`;
       $('winner').textContent=`${w}, ${Math.max(sc.t1,sc.t2)} to ${Math.min(sc.t1,sc.t2)}`;
+      $('winner').className=sc.t1===sc.t2?'':(sc.t1>sc.t2?'w1':'w2');
       $('overwhy').textContent=G.over.why+(sc.disputed?` ${sc.disputed} disputed square${sc.disputed>1?'s':''} count for nobody.`:'');
       $('overhead').innerHTML='<th></th><th>Placed</th><th>Controlled</th><th>Total</th>';
       $('overtable').innerHTML=[[S.n1,sc.p1,sc.s1,sc.t1],[S.n2,sc.p2,sc.s2,sc.t2]].map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${terr?r[2]:'—'}</td><td><b>${r[3]}</b></td></tr>`).join('');
@@ -841,39 +962,58 @@ function render(){
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 $('pl1').onclick=$('pl2').onclick=()=>{ showBreak=!showBreak; render(); };
-$('rollBtn').onclick=roll;
+$('rollBtn').onclick=()=>{ if(G&&G.over){ overHidden=false; render(); return; } roll(); };
 $('useRoll').onclick=()=>{ if(G.dice||G.over||!myTurn()) return; snapshot(); applyRoll(+$('m1').value,+$('m2').value); commit(); render(); };
-$('placeBtn').onclick=place; $('rotBtn').onclick=rotate; $('sugBtn').onclick=suggest; $('undoBtn').onclick=undo;
+$('placeBtn').onclick=place; $('rotBtn').onclick=rotate; $('sugBtn').onclick=suggest; $('undoBtn').onclick=()=>{ closeSheets(); undo(); };
 document.querySelectorAll('.pad button[data-dx]').forEach(b=>b.onclick=()=>nudge(+b.dataset.dx,+b.dataset.dy));
 $('quitBtn').onclick=()=>{$('quitConfirm').hidden=false;};
 $('quitNo').onclick=()=>{$('quitConfirm').hidden=true;};
-$('quitYes').onclick=()=>{$('quitConfirm').hidden=true; if(online()&&!NET.seat) return; G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; commit(); render();};
-$('quitSetup').onclick=()=>{$('quitConfirm').hidden=true; leaveOnline(); showSetup();};
-$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; commit(); render(); };
-$('newSetup').onclick=()=>{ leaveOnline(); showSetup(); };
+$('quitYes').onclick=()=>{$('quitConfirm').hidden=true; closeSheets(); if(online()&&!NET.seat) return; G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; overHidden=false; commit(); render();};
+$('quitSetup').onclick=()=>{$('quitConfirm').hidden=true; leaveOnline(true); showHome();};  // online: keep it so Rejoin works
+$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; overHidden=false; fitView(); commit(); render(); };
+$('newSetup').onclick=()=>{ leaveOnline(); showHome(); };
+$('seeBoard').onclick=()=>{ overHidden=true; render(); };
+let overHidden=false;
+function closeSheets(){ ['menuSheet','rulesSheet'].forEach(id=>$(id).hidden=true); $('quitConfirm').hidden=true; }
+document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',closeSheets));
+$('menuBtn').onclick=()=>{ $('quitConfirm').hidden=true; $('menuSheet').hidden=false; };
+$('howBtn').onclick=$('howBtn2').onclick=()=>{ $('menuSheet').hidden=true; $('rulesSheet').hidden=false; };
+$('setupBack').onclick=$('joinBack').onclick=()=>showHome();
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheets(); });
 document.addEventListener('keydown',e=>{
-  if($('game').hidden||!G||G.over||e.target.matches('input,select')) return;
+  if($('game').hidden||!G||G.over||e.target.matches('input,select')||!$('menuSheet').hidden) return;
   const k=e.key;
   if(k==='ArrowUp'){nudge(0,-1);e.preventDefault();} else if(k==='ArrowDown'){nudge(0,1);e.preventDefault();}
   else if(k==='ArrowLeft'){nudge(-1,0);e.preventDefault();} else if(k==='ArrowRight'){nudge(1,0);e.preventDefault();}
   else if(k==='r'||k==='R') rotate(); else if(k==='Enter'&&G.ghost) place(); else if(k===' '&&!G.dice){roll();e.preventDefault();}
 });
 
+const SCREENS=['home','setup','joinScreen','game'];
+function showScreen(id){ SCREENS.forEach(s=>$(s).hidden=s!==id); }
 function showGame(){
-  $('setup').hidden=true; $('hdr').hidden=true; $('game').hidden=false;
-  document.documentElement.classList.add('playing'); window.scrollTo(0,0);
-  regionCache=null; G.out=G.out||{1:false,2:false};
-  layoutBox(); if(!V) fitView(); render(); save();
+  closeSheets(); showScreen('game');
+  regionCache=null; G.out=G.out||{1:false,2:false}; overHidden=false;
+  if(!V) fitView(); render(); save();
 }
-function showSetup(){
-  $('game').hidden=true; $('setup').hidden=false; $('hdr').hidden=false;
-  document.documentElement.classList.remove('playing');
-  if(G){ const S=G.S; $('n1').value=S.n1; $('n2').value=S.n2; gw.value=S.W; gh.value=S.H;
+function showHome(){ closeSheets(); $('overSheet').hidden=true; showScreen('home'); syncPlayModes(); }
+const showSetup=showHome;
+function placeServer(slot){ $(slot).appendChild($('serverWrap')); }
+function openSetup(mode){
+  playMode=mode; prefillSettings();
+  $('setupTitle').textContent=mode==='host'?'Host online':'Pass & play';
+  $('setupLede').textContent=mode==='host'?'You play from the top-left corner. Share the code once the game is created.':'Two players, one phone. Pass it across after each turn.';
+  $('start').textContent=mode==='host'?'Create game':'Start game';
+  showErr('hostErr',''); placeServer('serverSlotHost'); showScreen('setup'); syncPlayModes();
+  $('setup').querySelector('.scroll').scrollTop=0;
+}
+function openJoin(){ playMode='join'; showErr('joinErr',''); placeServer('serverSlotJoin'); showScreen('joinScreen'); syncPlayModes(); }
+function prefillSettings(){
+  const src=G||load();
+  if(src&&src.S){ const S=src.S; $('n1').value=S.n1; $('n2').value=S.n2; gw.value=S.W; gh.value=S.H;
     const p=`${S.W}x${S.H}`; preset.value=[...preset.options].some(o=>o.value===p)?p:'custom';
     $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('golds').value=S.golds||7;
-    $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; syncRuleFields(); }
-  const lg=load(); $('resume').hidden=!(lg&&lg.S&&!lg.over)||playMode!=='local';
-  syncPlayModes();
+    $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; }
+  $('customRow').hidden=preset.value!=='custom'; syncRuleFields();
 }
 
 /* ---------- boot ---------- */
@@ -890,7 +1030,7 @@ function start(data){
     G=migrate(saved);
     if(data&&data.inGame){ V=data.V||null; showBreak=!!data.showBreak; showGame(); return; }
   }
-  showSetup();
+  showHome();
 }
 
 /* ---------- online play ----------
@@ -921,6 +1061,7 @@ async function bootNet(resumeNet){
       }catch(e){}
     }
     if(!NET.base){ try{ NET.base=normBase(localStorage.getItem(SRVKEY)||''); }catch(e){} }
+    if(!NET.base) NET.base=normBase(window.BLOCKCLAIM_DEFAULT_SERVER||'');
     $('serverUrl').value=NET.base;
   }
   NET.checked=true; syncPlayModes();
@@ -961,26 +1102,21 @@ function useServerField(){
 }
 
 function syncPlayModes(){
-  [['pmLocal','local'],['pmHost','host'],['pmJoin','join']].forEach(([id,m])=>{ $(id).setAttribute('aria-pressed',String(playMode===m)); });
-  $('pmHost').disabled=$('pmJoin').disabled=!NET.checked;
   const srv=NET.kind==='server';
-  $('playHint').textContent=
-    playMode==='host'?(srv?'Set up the game, then share the code. You play Player 1 (top-left).':'Set up the game, then share the code. You play Player 1 (top-left). The other player needs this page shared with them as an Editor.')
-   :playMode==='join'?"Type the code from the host's screen. You play Player 2 (bottom-right)."
-   :'Pass one phone back and forth. Works offline.';
+  $('pmHost').disabled=$('pmJoin').disabled=!NET.checked;
   $('serverWrap').hidden=!(srv&&!NET.sameOrigin&&playMode!=='local');
-  $('joinBox').hidden=playMode!=='join';
-  $('setupCard').hidden=playMode==='join';
   $('n2Wrap').hidden=playMode==='host';
-  $('start').textContent=playMode==='host'?'Host online game':'Start game';
+  if(playMode==='host'&&!srv) $('setupLede').textContent='You play from the top-left corner. The other player needs this page shared with them as an Editor.';
   const saved=savedNet();
   $('rejoin').hidden=!(NET.checked&&saved&&saved.code&&saved.kind===NET.kind)||online();
-  if(saved) $('rejoin').textContent=`Rejoin online game ${saved.code}`;
-  const lg=load(); $('resume').hidden=!(lg&&lg.S&&!lg.over)||playMode!=='local';
+  if(saved) $('rejoinTitle').textContent=`Rejoin game ${saved.code}`;
+  const lg=load(), canResume=!!(lg&&lg.S&&!lg.over);
+  $('resume').hidden=!canResume;
+  if(canResume) $('resumeInfo').textContent=`${lg.S.n1} vs ${lg.S.n2} · Round ${lg.round||1}${lg.S.mode==='power'?' · Power Squares':''}`;
 }
-$('pmLocal').onclick=()=>{ playMode='local'; syncPlayModes(); };
-$('pmHost').onclick=()=>{ playMode='host'; syncPlayModes(); };
-$('pmJoin').onclick=()=>{ playMode='join'; syncPlayModes(); $('joinCode').focus(); };
+$('pmLocal').onclick=()=>openSetup('local');
+$('pmHost').onclick=()=>openSetup('host');
+$('pmJoin').onclick=()=>{ openJoin(); setTimeout(()=>$('joinCode').focus(),50); };
 $('joinCode').oninput=e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4); };
 $('joinBtn').onclick=()=>joinGame($('joinCode').value, $('joinName').value.trim()||'Player 2');
 $('rejoin').onclick=()=>{ const s=savedNet(); if(s) connect(s); };
@@ -1073,7 +1209,7 @@ async function poll(){
 }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&NET.polling){ clearTimeout(NET.timer); poll(); } });
 function onRemote(snap){
-  if(!snap.exists){ const first=!NET.first; leaveOnline(true); if(first){ showSetup(); playMode='join'; syncPlayModes(); showErr('joinErr','That game no longer exists.'); } else { showSetup(); } return; }
+  if(!snap.exists){ const first=!NET.first; leaveOnline(true); if(first){ openJoin(); showErr('joinErr','That game no longer exists.'); } else { showHome(); } return; }
   const d=snap.data(); const rev=d.rev||0;
   if(NET.first&&rev<=NET.rev) return;          // our own write echoing back, or an older copy
   NET.rev=rev; NET.status=d.status;
