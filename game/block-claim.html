@@ -9,7 +9,7 @@
   --ink:#16232c; --muted:#5b6f7c; --on-ink:#ffffff;
   --p1:#2453c9; --p1-soft:#d3defa; --p2:#d23a2a; --p2-soft:#f8d6d1;
   --p3:#e5ab00; --p3-soft:#fbedc2; --p3-text:#946d00; --p3-on:#2b2100; --p4:#1d9a57; --p4-soft:#cdeedb; --p4-text:#15784a;
-  --bad:#b42318; --ok:#127a4a; --chip:#e2eaf0; --gold:#d4820a; --gold-soft:#fde3bf;
+  --wall:#26313a; --bad:#b42318; --ok:#127a4a; --chip:#e2eaf0; --gold:#d4820a; --gold-soft:#fde3bf;
   --shadow:0 1px 2px rgba(22,35,44,.06),0 6px 20px rgba(22,35,44,.08);
   --f-display:"Bowlby One SC","Arial Black",Impact,sans-serif;
   --f-body:"Chivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -21,14 +21,14 @@
   --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
   --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6b5a; --p2-soft:#5a2620;
   --p3:#f5c443; --p3-soft:#4d3d0c; --p3-text:#f5c443; --p3-on:#2b2100; --p4:#45cf85; --p4-soft:#173f2b; --p4-text:#45cf85;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
+  --wall:#020507; --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0c1419; --surface:#152028; --surface-2:#1a2731; --line:#24343f; --line-strong:#3b5566;
   --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
   --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6b5a; --p2-soft:#5a2620;
   --p3:#f5c443; --p3-soft:#4d3d0c; --p3-text:#f5c443; --p3-on:#2b2100; --p4:#45cf85; --p4-soft:#173f2b; --p4-text:#45cf85;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
+  --wall:#020507; --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
 
 html{box-sizing:border-box;height:100%;overflow:hidden;background:var(--paper)}
@@ -295,6 +295,14 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         <option value="42x59">A4 full 42 × 59</option>
         <option value="custom">Custom</option>
       </select></span></label>
+      <label class="lrow" for="layout"><span class="lk">Layout</span><span class="sel"><select id="layout">
+        <option value="open" selected>Open</option>
+        <option value="rooms">Rooms</option>
+        <option value="choke">Chokepoints</option>
+        <option value="rocks">Rocks</option>
+        <option value="random">Surprise me</option>
+      </select></span></label>
+      <p class="rowhint" id="layoutHint" hidden></p>
       <div class="lrow dims" id="customRow" hidden><span class="lk">Size</span><span class="grow" style="flex:1"></span>
         <input id="gw" type="number" min="8" max="120" value="25" inputmode="numeric" aria-label="Width"><span class="x">×</span>
         <input id="gh" type="number" min="8" max="160" value="25" inputmode="numeric" aria-label="Height"></div>
@@ -467,6 +475,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <li><b>No fit?</b> You lose a life (3 by default). At zero you're out and everyone else plays on.</li>
       <li><b>Sealed space.</b> Empty space only you can reach fills in with your colour and counts as yours.</li>
       <li><b>End.</b> When no space is left that two or more players can reach, or everyone is out. Most squares wins.</li>
+      <li><b>Layouts.</b> Specialty boards have blacked-out squares nobody can use. Doorways can be 1 square wide, and only a block with a side that small fits through, so a big roll isn't always better.</li>
       <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it. They land somewhere new each game.</li>
       <li><b>Rematch.</b> Who goes first moves along one seat each rematch.</li>
       <li><b>Computer.</b> Add up to three, each Easy, Medium or Hard. Easy plays loosely. Medium races for space nearby. Hard reads the whole board, walls players in and squeezes the room they need for their next roll.</li>
@@ -490,8 +499,13 @@ let showBreak=false;
 const preset=$('preset'),gw=$('gw'),gh=$('gh');
 preset.onchange=()=>{ if(preset.value!=='custom'){const[a,b]=preset.value.split('x');gw.value=a;gh.value=b;} $('customRow').hidden=preset.value!=='custom'; };
 [gw,gh].forEach(i=>i.oninput=()=>{preset.value='custom'; $('customRow').hidden=false;});
-function syncRuleFields(){const v=$('endRule').value;$('roundsWrap').hidden=v!=='rounds';$('targetWrap').hidden=v!=='target';$('stallWrap').hidden=$('noFit').value!=='pass';$('livesWrap').hidden=$('noFit').value!=='out';const pw=$('mode').value==='power';$('goldsWrap').hidden=!pw;$('goldsHint').hidden=!pw;}
-$('mode').onchange=syncRuleFields;
+const LAYOUT_HINTS={
+  rooms:'Walls split the board into nine rooms joined by doorways 1 to 3 squares wide. Big blocks can get stuck.',
+  choke:'Walls down the middle both ways. Corners meet only through a few narrow gaps, with rocks in the way.',
+  rocks:'Blacked-out rocks scattered across the board to build around.',
+  random:'A different specialty board each game: rooms, chokepoints or rocks.'};
+function syncRuleFields(){ const lv=$('layout').value; $('layoutHint').hidden=lv==='open'; $('layoutHint').textContent=LAYOUT_HINTS[lv]||'';const v=$('endRule').value;$('roundsWrap').hidden=v!=='rounds';$('targetWrap').hidden=v!=='target';$('stallWrap').hidden=$('noFit').value!=='pass';$('livesWrap').hidden=$('noFit').value!=='out';const pw=$('mode').value==='power';$('goldsWrap').hidden=!pw;$('goldsHint').hidden=!pw;}
+$('mode').onchange=syncRuleFields; $('layout').onchange=syncRuleFields;
 $('endRule').onchange=syncRuleFields; $('noFit').onchange=syncRuleFields;
 for(const s of [$('m1'),$('m2')]) for(let i=1;i<=6;i++){const o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}
 
@@ -553,7 +567,7 @@ function readSettings(){
   return {
     players, vs:players.some(p=>p.cpu)?'cpu':'human',
     W:clamp(gw.value,8,120,25), H:clamp(gh.value,8,160,25),
-    mode:$('mode').value, golds:clamp($('golds').value,1,60,7),
+    mode:$('mode').value, golds:clamp($('golds').value,1,60,7), layout:$('layout').value,
     endRule:$('endRule').value, rounds:clamp($('rounds').value,1,500,20), target:clamp($('target').value,5,95,50),
     noFit:$('noFit').value, stall:clamp($('stall').value,0,50,8), lives:clamp($('lives').value,1,20,3),
     scoring:$('scoring').value, diceMode:$('diceMode').value
@@ -563,18 +577,25 @@ function newGame(S,first){
   const seats=seatsOf(S), lives={}, out={};
   seats.forEach(q=>{ lives[q]=S.lives||3; out[q]=false; });
   first=seats.includes(first)?first:1;
-  return {S, cells:new Array(S.W*S.H).fill(0), ctrl:new Array(S.W*S.H).fill(0), blocks:[], turn:first, first, round:1, dice:null, ghost:null,
+  const cells=new Array(S.W*S.H).fill(0), walls=genLayout(S.W,S.H,S.layout);
+  for(const k of walls) cells[k]=WALL;
+  return {S, cells, walls:walls.length, ctrl:new Array(S.W*S.H).fill(0), blocks:[], turn:first, first, round:1, dice:null, ghost:null,
           passes:0, out, lives, over:null, history:[], lastMsg:'',
-          gold:S.mode==='power'&&seats.length>=2?genGold(S.W,S.H,S.golds,seats.length):null};
+          gold:S.mode==='power'&&seats.length>=2?genGold(S.W,S.H,S.golds,seats.length,cells):null};
 }
 // Golden squares: scattered at random for variety, then checked so no corner in play gets a
 // much better spread. For each layout we look at, per player, how many golden squares are
 // nearest their corner and how far away the gold is on average; lopsided layouts are rerolled.
-function genGold(W,H,n,N){
+function genGold(W,H,n,N,cells){
   n=Math.max(1,Math.min(n,Math.floor(W*H/6)));
   const P=Array.from({length:Math.max(2,N||2)},(_,i)=>i+1), corners=P.map(q=>cpuCorner(W,H,q));
   const minCorner=Math.max(3,Math.round((W+H)/7));     // keep gold out of easy opening reach
-  const dist=(k,[cx,cy])=>Math.abs(k%W-cx)+Math.abs(((k/W)|0)-cy);
+  // walking distance from each corner, going round any blacked-out squares
+  const D=corners.map(([cx,cy])=>{ const d=new Int32Array(W*H).fill(-1), st=[cy*W+cx]; d[cy*W+cx]=0;
+    for(let h=0;h<st.length;h++){ const k=st[h], x=k%W;
+      for(const m of [x>0?k-1:-1,x<W-1?k+1:-1,k-W,k+W]) if(m>=0&&m<W*H&&d[m]<0&&!(cells&&cells[m]===WALL)){ d[m]=d[k]+1; st.push(m); } }
+    return d; });
+  const dist=(k,c)=>D[corners.indexOf(c)][k];
   const unfairness=pts=>{
     const near=P.map(()=>0), sum=P.map(()=>0);
     for(const k of pts){
@@ -589,14 +610,14 @@ function genGold(W,H,n,N){
     const spacing=attempt<300?3:attempt<500?2:1, pts=[];
     for(let tries=0;pts.length<n&&tries<3000;tries++){
       const x=Math.floor(Math.random()*W), y=Math.floor(Math.random()*H), k=y*W+x;
-      if(corners.some(c=>dist(k,c)<minCorner)) continue;
+      if(corners.some(c=>dist(k,c)<minCorner)) continue;      // also skips walls and unreachable squares (-1)
       if(pts.some(o=>Math.max(Math.abs(o%W-x),Math.abs(((o/W)|0)-y))<spacing)) continue;
       pts.push(k);
     }
     if(pts.length<n) continue;
     const u=unfairness(pts), score=u.nearGap+4*u.distGap;
     if(score<bestScore){ best=pts; bestScore=score; }
-    if(u.nearGap<=1&&u.distGap<=0.1) return pts;        // fair enough: no corner clearly ahead
+    if(u.nearGap<=1&&u.distGap<=0.12) return pts;       // fair enough: no corner clearly ahead
   }
   return best||[];
 }
@@ -650,7 +671,7 @@ function regions(){
       const k=st.pop(); cells.push(k); const x=k%W,y=(k/W)|0;
       if(x>0)visit(k-1); if(x<W-1)visit(k+1); if(y>0)visit(k-W); if(y<H-1)visit(k+W);
     }
-    function visit(n){ const v=c[n]; if(v) mask|=1<<v; else if(!seen[n]){seen[n]=1;st.push(n);} }
+    function visit(n){ const v=c[n]; if(v===WALL) return; if(v) mask|=1<<v; else if(!seen[n]){seen[n]=1;st.push(n);} }
     let owner=-1;
     if(!ready) owner=0;
     else if(mask) owner=(mask&(mask-1))?0:Math.log2(mask);
@@ -692,7 +713,7 @@ function fillSealed(){
   return n;
 }
 function checkEnd(){
-  const S=G.S, sc=scores(), total=S.W*S.H, P=seats();
+  const S=G.S, sc=scores(), total=S.W*S.H-(G.walls||0), P=seats();
   if(P.every(q=>G.out[q])) return P.length===2?'Neither player can place their roll.':'No one can place their roll.';
   if(sc.power){
     const n=G.gold.length;
@@ -707,6 +728,61 @@ function checkEnd(){
   if(S.noFit==='pass'&&S.stall>0 && G.passes>=S.stall) return `${S.stall} passes in a row with no block placed.`;
   return null;
 }
+
+/* ---------- specialty boards (BEGIN-LAYOUT) ----------
+   Blacked-out squares nobody can use. A layout is drawn at random in the top-left quarter and
+   mirrored into the other three, so every corner gets the same terrain; it's then checked that
+   all four corners can reach each other. Doorways are 1-3 squares wide: to pass a 1-wide gap
+   you need a block with a side of 1, so a big roll isn't always the better one.
+   Pure function; returns the blacked-out square indices. */
+const WALL=9;
+const LAYOUT_NAMES={open:'Open',rooms:'Rooms',choke:'Chokepoints',rocks:'Rocks',random:'Surprise me'};
+function genLayout(W,H,style,rnd){
+  rnd=rnd||Math.random;
+  if(!style||style==='open') return [];
+  if(style==='random') style=['rooms','choke','rocks'][Math.floor(rnd()*3)];
+  const QW=Math.ceil(W/2), QH=Math.ceil(H/2);
+  const R=(a,b)=>a+Math.floor(rnd()*(b-a+1));                       // inclusive
+  const safe=Math.min(6,Math.floor(Math.min(QW,QH)/2));               // open start area at each corner
+  for(let attempt=0;attempt<40;attempt++){
+    const q=new Uint8Array(QW*QH);
+    const set=(x,y)=>{ if(x>=0&&y>=0&&x<QW&&y<QH) q[y*QW+x]=1; };
+    const clear=(x,y)=>{ if(x>=0&&y>=0&&x<QW&&y<QH) q[y*QW+x]=0; };
+    const doorW=()=>{ const r=rnd(); return r<0.22?1:r<0.65?2:3; };
+    // a wall with doorways: one, or two along long walls (one in each half)
+    const doors=(a,b,open)=>{ const n=b-a+1>=11?2:1, part=Math.floor((b-a+1)/n);
+      for(let i=0;i<n;i++){ const lo=a+i*part, hi=i===n-1?b:lo+part-1, w=Math.min(doorW(),hi-lo+1), d=R(lo,hi-w+1); for(let t=d;t<d+w;t++) open(t); } };
+    const vline=(x,y0,y1)=>{ if(y1<y0) return; for(let y=y0;y<=y1;y++) set(x,y); doors(y0,y1,y=>clear(x,y)); };
+    const hline=(y,x0,x1)=>{ if(x1<x0) return; for(let x=x0;x<=x1;x++) set(x,y); doors(x0,x1,x=>clear(x,y)); };
+    const rocks=n=>{ for(let i=0;i<n;i++){ const w=R(1,3),h=R(1,3),x=R(0,QW-w),y=R(0,QH-h); for(let j=y;j<y+h;j++) for(let k=x;k<x+w;k++) set(k,j); } };
+    const midX=QW-1, midY=QH-1;                                       // the board's middle lines
+    if(style==='rooms'&&QW>=9&&QH>=9){
+      const vx=R(safe,Math.max(safe,QW-5)), hy=R(safe,Math.max(safe,QH-5));   // keep inner walls clear of the middle ones
+      // mirrored, these make a 3 × 3 grid of rooms: one per corner, four between them, one in the middle
+      vline(vx,0,hy-1); vline(vx,hy+1,midY); hline(hy,0,vx-1); hline(hy,vx+1,midX); set(vx,hy);
+    } else if(style==='choke'&&QW>=6&&QH>=6){
+      vline(midX,0,midY-1); hline(midY,0,midX-1); set(midX,midY);
+      rocks(Math.round(QW*QH/45));
+    } else {
+      rocks(Math.max(2,Math.round(QW*QH/22)));
+    }
+    for(let y=0;y<safe;y++) for(let x=0;x<safe;x++) clear(x,y);
+    // mirror into the full board
+    const cells=new Uint8Array(W*H);
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++) cells[y*W+x]=q[Math.min(y,H-1-y)*QW+Math.min(x,W-1-x)];
+    // every corner must reach every other; anything cut off becomes wall too
+    const seen=new Uint8Array(W*H), st=[0]; seen[0]=1;
+    while(st.length){ const k=st.pop(), x=k%W;
+      for(const m of [x>0?k-1:-1,x<W-1?k+1:-1,k-W,k+W]) if(m>=0&&m<W*H&&!cells[m]&&!seen[m]){ seen[m]=1; st.push(m); } }
+    if(!seen[W-1]||!seen[W*H-1]||!seen[(H-1)*W]) continue;
+    const out=[];
+    for(let k=0;k<W*H;k++) if(cells[k]||!seen[k]) out.push(k);
+    if(out.length>W*H*0.3) continue;                                    // too crowded: try again
+    return out;
+  }
+  return [];
+}
+/* (END-LAYOUT) */
 
 /* ---------- computer opponent (BEGIN-AI) ----------
    Pure functions: they read a board snapshot and never touch the page or G.
@@ -782,19 +858,19 @@ function cpuAnalyse(ctx,c,p,race,horizon){
       while(top){ const k=st[--top]; n++; const x=k%W;
         const nb=[x>0?k-1:-1, x<W-1?k+1:-1, k-W, k+W];
         for(const m of nb){ if(m<0||m>=N) continue; const v=c[m];
-          if(v) mask|=1<<v; else if(reg[m]<0){ reg[m]=id; st[top++]=m; } } }
+          if(v===WALL) continue; if(v) mask|=1<<v; else if(reg[m]<0){ reg[m]=id; st[top++]=m; } } }
       const ow=mask&&!(mask&(mask-1))?Math.log2(mask):0; owner.push(ow);
       if(ow===p) r.exP+=n; else if(ow) r.exO+=n;
     }
   }
   if(gold) for(const k of gold){
-    const ow=c[k]||(reg[k]>=0?owner[reg[k]]:0);
+    const ow=(c[k]!==WALL&&c[k])||(reg[k]>=0?owner[reg[k]]:0);
     if(ow===p) r.goldP++; else if(ow) r.goldO++;
   }
   if(!race) return r;
   // race: breadth-first from every active player at once; each empty square goes to whoever reaches it first
   const dist=new Int16Array(N).fill(-1), lab=new Uint8Array(N), q=new Int32Array(N); let qh=0,qt=0;
-  for(let k=0;k<N;k++){ const v=c[k]; if(!v) continue; dist[k]=0; if(out[v]) continue; lab[k]=v===p?1:2; q[qt++]=k; }
+  for(let k=0;k<N;k++){ const v=c[k]; if(!v) continue; dist[k]=0; if(v===WALL||out[v]) continue; lab[k]=v===p?1:2; q[qt++]=k; }
   for(const s of players){
     if(has[s]||out[s]) continue;
     const [cx,cy]=cpuCorner(W,H,s), k=cy*W+cx;
@@ -980,6 +1056,7 @@ function place(){
 function invalidReason(g){
   const {W,H}=G.S;
   if(g.x<0||g.y<0||g.x+g.w>W||g.y+g.h>H) return 'That runs off the paper.';
+  for(let j=g.y;j<g.y+g.h;j++) for(let i=g.x;i<g.x+g.w;i++) if(G.cells[idx(i,j)]===WALL) return 'That covers a blacked-out square.';
   for(let j=g.y;j<g.y+g.h;j++) for(let i=g.x;i<g.x+g.w;i++) if(G.cells[idx(i,j)]) return 'That overlaps a block.';
   if(!hasBlocks(G.turn)) return `Your first block has to cover your ${CORNER_NAMES[G.turn-1]} corner square.`;
   return 'It must share an edge with one of your blocks.';
@@ -1144,10 +1221,10 @@ function draw(){
   x.font=`700 ${Math.max(8,s*.7)}px ${C.mono}`; x.textAlign='center'; x.textBaseline='middle';
   for(const q of seats()){ const [cx,cy]=cornerOf(q); if(!G.cells[cy*W+cx]){ x.fillStyle=PC[q]; x.fillText(String(q),ox+(cx+.5)*s,oy+(cy+.5)*s+1); } }
   // claimed squares: one solid colour per player, so touching blocks merge into one shape
-  const c=G.cells, fillCol=PC;
+  const c=G.cells, fillCol=PC, wallCol=css('--wall');
   for(let j=j0;j<j1;j++) for(let i=i0;i<i1;i++){
     const v=c[j*W+i]; if(!v) continue;
-    x.fillStyle=fillCol[v]; x.globalAlpha=G.ctrl[j*W+i]?.62:1;
+    x.fillStyle=v===WALL?wallCol:fillCol[v]; x.globalAlpha=v!==WALL&&G.ctrl[j*W+i]?.62:1;
     // overdraw by a hair so no seams show between neighbouring squares
     x.fillRect(Math.floor(ox+i*s),Math.floor(oy+j*s),Math.ceil(s)+1,Math.ceil(s)+1);
   }
@@ -1157,14 +1234,15 @@ function draw(){
   x.lineCap='square';
   const edge=(x0,y0,x1,y1,col,w)=>{ x.strokeStyle=col; x.lineWidth=w; x.beginPath(); x.moveTo(x0,y0); x.lineTo(x1,y1); x.stroke(); };
   const seams=[], rims=[];
+  const cv2=k=>{ const v=c[k]; return v===WALL?0:v; };   // walls get no player edges
   for(let j=j0;j<j1;j++) for(let i=i0;i<i1;i++){
-    const v=c[j*W+i];
+    const v=cv2(j*W+i);
     const X=ox+i*s, Y=oy+j*s;
     // right edge
-    if(i+1<W){ const r=c[j*W+i+1]; if(v!==r){ (v&&r?seams:rims).push([X+s,Y,X+s,Y+s,v||r]); } }
+    if(i+1<W){ const r=cv2(j*W+i+1); if(v!==r){ (v&&r?seams:rims).push([X+s,Y,X+s,Y+s,v||r]); } }
     else if(v) rims.push([X+s,Y,X+s,Y+s,v]);
     // bottom edge
-    if(j+1<H){ const d=c[(j+1)*W+i]; if(v!==d){ (v&&d?seams:rims).push([X,Y+s,X+s,Y+s,v||d]); } }
+    if(j+1<H){ const d=cv2((j+1)*W+i); if(v!==d){ (v&&d?seams:rims).push([X,Y+s,X+s,Y+s,v||d]); } }
     else if(v) rims.push([X,Y+s,X+s,Y+s,v]);
     if(i===0&&v) rims.push([X,Y,X,Y+s,v]);
     if(j===0&&v) rims.push([X,Y,X+s,Y,v]);
@@ -1177,7 +1255,7 @@ function draw(){
     for(const k of G.gold){
       const gi=k%W, gj=(k/W)|0, X=ox+gi*s, Y=oy+gj*s;
       if(X>b.w||Y>b.h||X+s<0||Y+s<0) continue;
-      const taken=!!c[k];
+      const taken=!!c[k]&&c[k]!==WALL;
       if(!taken){ x.fillStyle=goldSoft; x.fillRect(X+1,Y+1,s-1,s-1); }
       const r=s*(taken?.3:.36), cx=X+s/2, cy=Y+s/2;
       x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r,cy); x.lineTo(cx,cy+r); x.lineTo(cx-r,cy); x.closePath();
@@ -1390,7 +1468,7 @@ function prefillSettings(){
     }
     if(pl[0]&&!pl[0].cpu&&playMode==='host') seatModel.host=[{n:pl[0].n}];
     const p=`${S.W}x${S.H}`; preset.value=[...preset.options].some(o=>o.value===p)?p:'custom';
-    $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('golds').value=S.golds||7;
+    $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('layout').value=S.layout||'open'; $('golds').value=S.golds||7;
     $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; }
   $('customRow').hidden=preset.value!=='custom'; syncRuleFields();
 }

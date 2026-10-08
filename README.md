@@ -94,4 +94,5 @@ to the Play Store.
 ```sh
 node tools/ai-bench/sim.js 40 25 25 hard,medium
 node tools/ai-bench/sim.js 24 25 25 hard,medium,medium,medium
+node tools/ai-bench/sim.js 30 25 25 hard,medium open rooms   # specialty boards: rooms, choke, rocks
 ```

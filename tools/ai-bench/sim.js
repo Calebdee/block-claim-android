@@ -1,20 +1,21 @@
 // Headless matches for 2-4 computer players.
-// usage: node tools/ai-bench/sim.js <games> <W> <H> <level,level[,level[,level]]> [power]
+// usage: node tools/ai-bench/sim.js <games> <W> <H> <level,level[,level[,level]]> [power|open] [layout]
+//        layout: open, rooms, choke, rocks (the game's specialty boards)
 // e.g.   node tools/ai-bench/sim.js 40 25 25 hard,medium
 //        node tools/ai-bench/sim.js 24 25 25 hard,medium,medium,medium
 // Seats rotate each game so every level plays from every corner equally often.
 const fs=require('fs');
 const src=process.env.AI_SRC||require('path').join(__dirname,'..','..','game','block-claim.html');
 let code=fs.readFileSync(src,'utf8');
-if(src.endsWith('.html')) code=code.slice(code.indexOf('/* ---------- computer opponent (BEGIN-AI)'), code.indexOf('/* (END-AI) */'));
-eval(code+';globalThis.cpuPick=cpuPick;globalThis.cpuSpots=cpuSpots;');
+if(src.endsWith('.html')) code=code.slice(code.indexOf('/* ---------- specialty boards (BEGIN-LAYOUT)'), code.indexOf('/* (END-AI) */'));
+eval(code+';globalThis.cpuPick=cpuPick;globalThis.cpuSpots=cpuSpots;globalThis.genLayout=genLayout;globalThis.WALL=WALL;');
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 function fill(c,W,H,players){
   const N=W*H, has={}; for(const v of c) if(v) has[v]=true;
   if(!players.every(q=>has[q])) return N;
   const seen=new Uint8Array(N); let disputed=0;
   for(let s=0;s<N;s++){ if(c[s]||seen[s]) continue; const st=[s],cells=[]; seen[s]=1; let mask=0;
-    while(st.length){const k=st.pop(); cells.push(k); const x=k%W; for(const m of [x>0?k-1:-1,x<W-1?k+1:-1,k-W,k+W]){ if(m<0||m>=N) continue; const v=c[m]; if(v) mask|=1<<v; else if(!seen[m]){seen[m]=1;st.push(m);} } }
+    while(st.length){const k=st.pop(); cells.push(k); const x=k%W; for(const m of [x>0?k-1:-1,x<W-1?k+1:-1,k-W,k+W]){ if(m<0||m>=N) continue; const v=c[m]; if(v===WALL) continue; if(v) mask|=1<<v; else if(!seen[m]){seen[m]=1;st.push(m);} } }
     if(mask&&!(mask&(mask-1))){ const o=Math.log2(mask); cells.forEach(k=>c[k]=o); } else disputed+=cells.length; }
   return disputed;
 }
@@ -24,8 +25,9 @@ function genGold4(W,H,seed){ // 4-way mirrored set of 8 + centre
     const pts=[[x,y],[W-1-x,y],[x,H-1-y],[W-1-x,H-1-y]]; if(pts.some(([a,b])=>Math.min(a+b,W-1-a+b,a+H-1-b,W-1-a+H-1-b)<6)) continue; pts.forEach(([a,b])=>s.add(b*W+a)); }
   return [...s];
 }
-function play(W,H,levels,seed,gold){
+function play(W,H,levels,seed,gold,layout){
   const rnd=mulberry(seed), c=new Array(W*H).fill(0), players=levels.map((_,i)=>i+1);
+  for(const k of genLayout(W,H,layout||'open',mulberry(seed*7+1))) c[k]=WALL;
   const lives={}, out={}; players.forEach(q=>{lives[q]=3; out[q]=false;});
   let turn=1, moves=0, tmax=0;
   while(moves<4000){
@@ -41,30 +43,31 @@ function play(W,H,levels,seed,gold){
     const disputed=fill(c,W,H,players); moves++;
     if(players.every(q=>out[q])) break;
     if(disputed===0) break;
-    if(gold){ const g={}; for(const k of gold) if(c[k]) g[c[k]]=(g[c[k]]||0)+1; const taken=Object.values(g).reduce((x,y)=>x+y,0);
+    if(gold){ const g={}; for(const k of gold) if(c[k]&&c[k]!==WALL) g[c[k]]=(g[c[k]]||0)+1; const taken=Object.values(g).reduce((x,y)=>x+y,0);
       if(Object.values(g).some(v=>v*2>gold.length)||taken===gold.length) break; }
     const i0=players.indexOf(turn); let nx=turn;
     for(let i=1;i<=players.length;i++){ const q=players[(i0+i)%players.length]; if(!out[q]){ nx=q; break; } }
     turn=nx;
   }
   const sc={}; players.forEach(q=>sc[q]=0);
-  if(gold){ for(const k of gold) if(c[k]) sc[c[k]]++; } else for(const v of c) if(v) sc[v]++;
-  return {sc,tmax,moves};
+  if(gold){ for(const k of gold) if(c[k]&&c[k]!==WALL) sc[c[k]]++; } else for(const v of c) if(v&&v!==WALL) sc[v]++;
+  const open=c.filter(v=>v===0).length, usable=c.filter(v=>v!==WALL).length;
+  return {sc,tmax,moves,unclaimed:open/usable};
 }
-const [n,W,H,lvArg,pw]=process.argv.slice(2);
+const [n,W,H,lvArg,pwArg,layout]=process.argv.slice(2); const pw=pwArg==='power';
 const levels=lvArg.split(','), P=levels.length;
 const wins={}, share={}; levels.forEach(l=>{wins[l]=wins[l]||0; share[l]=share[l]||0;});
-let tm=0, mv=0;
+let tm=0, mv=0, un=0;
 for(let g=0;g<+n;g++){
   const rot=levels.map((_,i)=>levels[(i+g)%P]);           // rotate seats
-  const r=play(+W,+H,rot,5000+g,pw?genGold4(+W,+H,90+g):null);
+  const r=play(+W,+H,rot,5000+g,pw?genGold4(+W,+H,90+g).filter(k=>k):null,layout);
   const best=Math.max(...Object.values(r.sc)), winners=Object.keys(r.sc).filter(q=>r.sc[q]===best);
   winners.forEach(q=>wins[rot[q-1]]+=1/winners.length);
   const tot=Object.values(r.sc).reduce((a,b)=>a+b,0)||1;
   Object.keys(r.sc).forEach(q=>share[rot[q-1]]+=r.sc[q]/tot/ +n);
-  tm=Math.max(tm,r.tmax); mv+=r.moves;
+  tm=Math.max(tm,r.tmax); mv+=r.moves; un+=r.unclaimed;
 }
 const counts={}; levels.forEach(l=>counts[l]=(counts[l]||0)+1);
-console.log(`${W}x${H}${pw?' power':''} [${levels.join(', ')}] x${n}: `+
+console.log(`${W}x${H}${pw?' power':''}${layout&&layout!=='open'?' '+layout:''} [${levels.join(', ')}] x${n}: `+
   Object.keys(wins).map(l=>`${l} wins ${wins[l].toFixed(1)}${counts[l]>1?` (${counts[l]} seats)`:''}, share ${(share[l]*100).toFixed(0)}%`).join(' | ')+
-  `  slowest ${tm}ms  avg moves ${(mv/n).toFixed(0)}`);
+  `  slowest ${tm}ms  avg moves ${(mv/n).toFixed(0)}  unclaimed at end ${(un/n*100).toFixed(0)}%`);
