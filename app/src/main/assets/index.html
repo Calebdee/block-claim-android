@@ -7,8 +7,9 @@
 :root{
   --paper:#eef3f6; --surface:#ffffff; --surface-2:#f6f9fb; --line:#d3e0e8; --line-strong:#93b2c4;
   --ink:#16232c; --muted:#5b6f7c; --on-ink:#ffffff;
-  --p1:#2453c9; --p1-soft:#d3defa; --p2:#d6336c; --p2-soft:#f9d5e2;
-  --bad:#b42318; --ok:#127a4a; --chip:#e2eaf0; --gold:#c99a06; --gold-soft:#fbeeb8;
+  --p1:#2453c9; --p1-soft:#d3defa; --p2:#d23a2a; --p2-soft:#f8d6d1;
+  --p3:#e5ab00; --p3-soft:#fbedc2; --p3-text:#946d00; --p3-on:#2b2100; --p4:#1d9a57; --p4-soft:#cdeedb; --p4-text:#15784a;
+  --bad:#b42318; --ok:#127a4a; --chip:#e2eaf0; --gold:#d4820a; --gold-soft:#fde3bf;
   --shadow:0 1px 2px rgba(22,35,44,.06),0 6px 20px rgba(22,35,44,.08);
   --f-display:"Bowlby One SC","Arial Black",Impact,sans-serif;
   --f-body:"Chivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -18,14 +19,16 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#0c1419; --surface:#152028; --surface-2:#1a2731; --line:#24343f; --line-strong:#3b5566;
   --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
-  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#f5c842; --gold-soft:#4d3d0c;
+  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6b5a; --p2-soft:#5a2620;
+  --p3:#f5c443; --p3-soft:#4d3d0c; --p3-text:#f5c443; --p3-on:#2b2100; --p4:#45cf85; --p4-soft:#173f2b; --p4-text:#45cf85;
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0c1419; --surface:#152028; --surface-2:#1a2731; --line:#24343f; --line-strong:#3b5566;
   --ink:#e6eef3; --muted:#91a7b5; --on-ink:#0c1419;
-  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6a9c; --p2-soft:#5a2236;
-  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#f5c842; --gold-soft:#4d3d0c;
+  --p1:#6f95ff; --p1-soft:#22345f; --p2:#ff6b5a; --p2-soft:#5a2620;
+  --p3:#f5c443; --p3-soft:#4d3d0c; --p3-text:#f5c443; --p3-on:#2b2100; --p4:#45cf85; --p4-soft:#173f2b; --p4-text:#45cf85;
+  --bad:#ff7a6b; --ok:#4fd29a; --chip:#1f2d37; --gold:#ffa63d; --gold-soft:#4f310c;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
 
 html{box-sizing:border-box;height:100%;overflow:hidden;background:var(--paper)}
@@ -41,7 +44,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 button:disabled{opacity:.38;cursor:default}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--p1);outline-offset:2px}
 .cta{width:100%;min-height:56px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-weight:800;font-size:17px;letter-spacing:.01em}
-.cta.go1{background:var(--p1);color:#fff} .cta.go2{background:var(--p2);color:#fff}
+.cta.go1{background:var(--p1);color:#fff} .cta.go2{background:var(--p2);color:#fff} .cta.go3{background:var(--p3);color:var(--p3-on)} .cta.go4{background:var(--p4);color:#fff}
 .cta:active:not(:disabled){transform:scale(.985)}
 .ghost{min-height:44px;padding:0 14px;border-radius:12px;background:var(--chip);font-weight:700}
 .icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto}
@@ -81,6 +84,7 @@ input::placeholder{color:var(--muted);opacity:.7}
 .group{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
 .lrow{display:flex;align-items:center;gap:12px;min-height:54px;padding:6px 16px;border-top:1px solid var(--line)}
 .group > .lrow:first-child,.group > [hidden] + .lrow{border-top:0}
+.group > .lrow.addrow{border-top:1px solid var(--line)}
 .lrow .lk{flex:0 0 auto;font-weight:600}
 .lrow input,.lrow select{flex:1 1 auto;text-align:right;padding:10px 0;text-overflow:ellipsis}
 .lrow select{appearance:none;-webkit-appearance:none;color:var(--muted);font-weight:600;cursor:pointer;text-align:right;text-align-last:right}
@@ -90,23 +94,40 @@ input::placeholder{color:var(--muted);opacity:.7}
 .lrow.dims input{width:56px;flex:0 0 auto;text-align:center;background:var(--chip);border-radius:10px;padding:8px 4px}
 .lrow.dims .x{color:var(--muted)}
 .dotc{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
-.dotc.d1{background:var(--p1)} .dotc.d2{background:var(--p2)}
+.dotc.d1{background:var(--p1)} .dotc.d2{background:var(--p2)} .dotc.d3{background:var(--p3)} .dotc.d4{background:var(--p4)}
 .rowhint{margin:0;padding:0 16px 12px;color:var(--muted);font-size:13px}
+.lrow .rm{width:32px;height:32px;margin-right:-8px;border-radius:10px;font-size:20px;color:var(--muted);flex:0 0 auto}
+.lrow .rm:active{background:var(--chip)}
+.addrow{width:100%;text-align:left;font:inherit;color:var(--muted)}
+.addrow .lk{font-weight:700;color:var(--ink)}
+.addrow .addtag{margin-left:auto;font-size:12.5px;font-weight:700}
+.addrow .dotc{opacity:.45}
+.seathint{margin:8px 4px 0;font-size:13px}
 .err{color:var(--bad);font-size:14px;margin:12px 4px 0}
 .codein{display:block;width:100%;margin:6px 0 4px;padding:18px 12px;text-align:center;font-family:var(--f-mono);font-size:40px;font-weight:700;letter-spacing:.35em;text-indent:.35em;
   text-transform:uppercase;background:var(--surface);border-radius:20px;box-shadow:var(--shadow)}
 
 /* game screen */
-.gbar{display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:stretch;gap:6px;padding:8px 10px 6px;flex:0 0 auto}
+.gbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:stretch;gap:6px;padding:8px 10px 6px;flex:0 0 auto}
+.cards{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:6px;min-width:0}
 .pl{display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:14px;background:var(--surface);border:2px solid transparent;min-width:0;text-align:left;box-shadow:var(--shadow)}
-.pl.p2{text-align:right;align-items:flex-end}
 .pl .nm{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pl .n{font-family:var(--f-mono);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05}
 .pl .br{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pl .lives{font-size:11px;letter-spacing:.08em;line-height:1;color:var(--muted)}
 .pl .tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bad)}
-.pl.p1 .nm,.pl.p1 .n{color:var(--p1)} .pl.p2 .nm,.pl.p2 .n{color:var(--p2)}
+.pl.p1 .nm,.pl.p1 .n{color:var(--p1)} .pl.p2 .nm,.pl.p2 .n{color:var(--p2)} .pl.p3 .nm,.pl.p3 .n{color:var(--p3-text)} .pl.p4 .nm,.pl.p4 .n{color:var(--p4-text)}
 .pl.p1.on{border-color:var(--p1);background:var(--p1-soft)} .pl.p2.on{border-color:var(--p2);background:var(--p2-soft)}
+.pl.p3.on{border-color:var(--p3);background:var(--p3-soft)} .pl.p4.on{border-color:var(--p4);background:var(--p4-soft)}
+.gbar.many .pl{padding:6px 8px;border-radius:12px}
+.gbar.many .pl .nm{font-size:11.5px}
+.gbar.many .pl .n{font-size:20px}
+.gbar.many .pl .lives{font-size:9.5px;letter-spacing:0}
+.gbar.many{grid-template-columns:auto minmax(0,1fr)}
+.gbar.many .mid{display:none}
+.gbar.many .pl .nm{letter-spacing:-.01em}
+.roundinfo{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.roundinfo:empty{display:none}
 .pl.out{opacity:.55}
 .gem{color:var(--gold)}
 .mid{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;line-height:1.25;min-width:44px}
@@ -115,6 +136,7 @@ input::placeholder{color:var(--muted);opacity:.7}
 .netbar b{font-family:var(--f-mono);font-size:16px;letter-spacing:.18em;color:var(--ink)}
 .netbar .ghost{min-height:32px;padding:0 10px;font-size:12.5px}
 .netbar .who{flex:1 1 auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.netbar .who .dotc{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:0}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto}
 .dot.wait{background:var(--gold)}
 .boardbox{position:relative;flex:1 1 auto;min-height:120px;margin:0 10px;border-radius:14px;overflow:hidden;background:var(--surface-2)}
@@ -141,7 +163,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .pad{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr;gap:6px}
 .pad button,.row2 button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-size:20px;font-weight:700}
 .pad #placeBtn{font-size:16px;font-weight:800;color:#fff;background:var(--ink)}
-.pad #placeBtn.go1{background:var(--p1)} .pad #placeBtn.go2{background:var(--p2)}
+.pad #placeBtn.go1{background:var(--p1)} .pad #placeBtn.go2{background:var(--p2)} .pad #placeBtn.go3{background:var(--p3);color:var(--p3-on)} .pad #placeBtn.go4{background:var(--p4)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .row2 button{height:44px;font-size:14.5px;font-weight:700}
 .manual{display:flex;gap:8px;align-items:center}
@@ -174,7 +196,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .result{align-items:stretch;text-align:center;gap:12px}
 .trophy{font-family:var(--f-display);font-size:13px;letter-spacing:.14em;color:var(--muted)}
 .result h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.05;margin:0;text-wrap:balance}
-.result h2.w1{color:var(--p1)} .result h2.w2{color:var(--p2)}
+.result h2.w1{color:var(--p1)} .result h2.w2{color:var(--p2)} .result h2.w3{color:var(--p3-text)} .result h2.w4{color:var(--p4-text)}
+.result td .dotc{display:inline-block;width:10px;height:10px;margin-right:8px;vertical-align:1px}
+.lvl{font-size:11px;font-weight:700;color:var(--muted);margin-left:4px}
 .result .why{margin:0;color:var(--muted);font-size:14px}
 .result table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
 .result td,.result th{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line)}
@@ -219,17 +243,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
     <button class="tile" id="pmLocal">
       <span class="ic k1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M6 12h12" stroke-dasharray="2 2"/></svg></span>
-      <span class="tx"><span class="tt">Pass &amp; play</span><span class="ts">One phone, two players. Works offline.</span></span>
+      <span class="tx"><span class="tt">Pass &amp; play</span><span class="ts">One phone, 2 to 4 players. Works offline.</span></span>
       <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </button>
     <button class="tile" id="pmCpu">
       <span class="ic k0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 7V4M9 12h.01M15 12h.01M9.5 15.5h5"/></svg></span>
-      <span class="tx"><span class="tt">Play the computer</span><span class="ts">Easy, medium or hard. Works offline.</span></span>
+      <span class="tx"><span class="tt">Play the computer</span><span class="ts">Up to 3 computers, easy to hard. Works offline.</span></span>
       <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </button>
     <button class="tile" id="pmHost">
       <span class="ic k2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
-      <span class="tx"><span class="tt">Host online</span><span class="ts">Start a game and share a 4-letter code.</span></span>
+      <span class="tx"><span class="tt">Host online</span><span class="ts">Share a 4-letter code with up to 3 players.</span></span>
       <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </button>
     <button class="tile" id="pmJoin">
@@ -251,16 +275,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <p class="lede" id="setupLede"></p>
     <div id="serverSlotHost"></div>
     <h3 class="gh">Players</h3>
-    <div class="group">
-      <label class="lrow" for="n1"><span class="dotc d1"></span><span class="lk">Player 1</span><input id="n1" value="Player 1" maxlength="18" autocomplete="off"></label>
-      <label class="lrow" for="ai" id="aiWrap" hidden><span class="dotc d2"></span><span class="lk">Computer</span><span class="sel"><select id="ai">
-        <option value="easy">Easy</option>
-        <option value="medium" selected>Medium</option>
-        <option value="hard">Hard</option>
-      </select></span></label>
-      <p class="rowhint" id="aiHint" hidden></p>
-      <label class="lrow" for="n2" id="n2Wrap"><span class="dotc d2"></span><span class="lk">Player 2</span><input id="n2" value="Player 2" maxlength="18" autocomplete="off"></label>
-    </div>
+    <div class="group" id="seatRows"></div>
+    <p class="lede seathint" id="seatHint" hidden></p>
     <h3 class="gh">Game</h3>
     <div class="group">
       <label class="lrow" for="mode"><span class="lk">Mode</span><span class="sel"><select id="mode">
@@ -268,7 +284,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         <option value="power">Power Squares</option>
       </select></span></label>
       <label class="lrow" for="golds" id="goldsWrap" hidden><span class="lk">Golden squares</span><input id="golds" type="number" min="1" max="60" value="7" inputmode="numeric"></label>
-      <p class="rowhint" id="goldsHint" hidden>Only golden squares score. They're placed at random but mirrored, so both corners face the same layout.</p>
+      <p class="rowhint" id="goldsHint" hidden>Only golden squares score. They land somewhere new each game, checked so no corner gets a much better spread.</p>
       <label class="lrow" for="preset"><span class="lk">Board</span><span class="sel"><select id="preset">
         <option value="25x25" selected>Standard 25 × 25</option>
         <option value="20x20">Short 20 × 20</option>
@@ -319,11 +335,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <h2>Join online</h2>
   </header>
   <div class="scroll">
-    <p class="lede">Type the code from the host's screen. You'll play from the bottom-right corner.</p>
+    <p class="lede">Type the code from the host's screen. The first to join plays Red, then Yellow, then Green.</p>
     <input id="joinCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Game code">
     <h3 class="gh">You</h3>
     <div class="group">
-      <label class="lrow" for="joinName"><span class="dotc d2"></span><span class="lk">Name</span><input id="joinName" value="Player 2" maxlength="18" autocomplete="off"></label>
+      <label class="lrow" for="joinName"><span class="dotc d2"></span><span class="lk">Name</span><input id="joinName" value="" placeholder="Your name" maxlength="18" autocomplete="off"></label>
     </div>
     <div id="serverSlotJoin"></div>
     <p class="err" id="joinErr" hidden></p>
@@ -343,11 +359,15 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <!-- GAME -->
 <section id="game" class="screen" hidden>
-  <header class="gbar">
+  <header class="gbar" id="gbar">
     <button class="icon" id="menuBtn" aria-label="Game menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    <button class="pl p1" id="pl1" aria-expanded="false"><span class="nm" id="nm1"></span><span class="n" id="sc1"></span><span class="br" id="br1" hidden></span><span class="lives" id="lv1"></span><span class="tag" id="out1" hidden>Out</span></button>
+    <div class="cards" id="cards">
+      <button class="pl p1" id="pl1" aria-expanded="false"><span class="nm" id="nm1"></span><span class="n" id="sc1"></span><span class="br" id="br1" hidden></span><span class="lives" id="lv1"></span><span class="tag" id="out1" hidden>Out</span></button>
+      <button class="pl p2" id="pl2" aria-expanded="false"><span class="nm" id="nm2"></span><span class="n" id="sc2"></span><span class="br" id="br2" hidden></span><span class="lives" id="lv2"></span><span class="tag" id="out2" hidden>Out</span></button>
+      <button class="pl p3" id="pl3" aria-expanded="false" hidden><span class="nm" id="nm3"></span><span class="n" id="sc3"></span><span class="br" id="br3" hidden></span><span class="lives" id="lv3"></span><span class="tag" id="out3" hidden>Out</span></button>
+      <button class="pl p4" id="pl4" aria-expanded="false" hidden><span class="nm" id="nm4"></span><span class="n" id="sc4"></span><span class="br" id="br4" hidden></span><span class="lives" id="lv4"></span><span class="tag" id="out4" hidden>Out</span></button>
+    </div>
     <div class="mid" id="midinfo"></div>
-    <button class="pl p2" id="pl2" aria-expanded="false"><span class="nm" id="nm2"></span><span class="n" id="sc2"></span><span class="br" id="br2" hidden></span><span class="lives" id="lv2"></span><span class="tag" id="out2" hidden>Out</span></button>
   </header>
   <div class="netbar" id="netBar" hidden>
     <span class="dot" id="netDot"></span><span>Code</span><b id="netCode"></b>
@@ -365,7 +385,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <div class="dock gdock" id="tray">
     <div class="status">
       <div class="dice" id="dice"></div>
-      <div class="stxt"><div class="blocksize" id="blocksize"></div><p class="msg" id="msg"></p></div>
+      <div class="stxt"><div class="roundinfo" id="roundinfo"></div><div class="blocksize" id="blocksize"></div><p class="msg" id="msg"></p></div>
     </div>
     <div class="controls">
       <div class="manual" id="manualRow" hidden>
@@ -435,16 +455,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <div class="grab"></div>
     <h3>How to play</h3>
     <ol class="rules">
-      <li><b>Corners.</b> Player 1's first block covers the top-left square; Player 2's covers the bottom-right.</li>
+      <li><b>Corners.</b> Up to four players. Each first block covers your corner: Blue top-left, Red bottom-right, Yellow top-right, Green bottom-left. Play goes in that order.</li>
       <li><b>Roll.</b> Two dice make your block: a 4 and a 3 is a 4×3, either way round.</li>
       <li><b>Place.</b> Every block after the first must share an edge with one of yours. No overlaps, nothing off the paper.</li>
       <li><b>Board.</b> Tap to drop the block, drag it to move, double-tap to rotate, pinch to zoom. Tap Place to confirm.</li>
-      <li><b>No fit?</b> You lose a life (3 by default). At zero you're out and your opponent plays on.</li>
+      <li><b>No fit?</b> You lose a life (3 by default). At zero you're out and everyone else plays on.</li>
       <li><b>Sealed space.</b> Empty space only you can reach fills in with your colour and counts as yours.</li>
-      <li><b>End.</b> When no space is left that both players can reach, or both are out. Most squares wins.</li>
-      <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it.</li>
-      <li><b>Computer.</b> Easy plays loosely. Medium races you for space nearby. Hard reads the whole board, walls you in, and squeezes the room you need for your next roll.</li>
-      <li><b>Online.</b> Host shares a 4-letter code; the other player joins with it. Each phone moves on its own turn.</li>
+      <li><b>End.</b> When no space is left that two or more players can reach, or everyone is out. Most squares wins.</li>
+      <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it. They land somewhere new each game.</li>
+      <li><b>Rematch.</b> Who goes first moves along one seat each rematch.</li>
+      <li><b>Computer.</b> Add up to three, each Easy, Medium or Hard. Easy plays loosely. Medium races for space nearby. Hard reads the whole board, walls players in and squeezes the room they need for their next roll.</li>
+      <li><b>Online.</b> The host shares a 4-letter code and up to three players join with it, then the host taps Start. Each phone moves on its own turn.</li>
     </ol>
     <button class="ghost" data-close style="min-height:50px">Got it</button>
   </div>
@@ -469,18 +490,55 @@ $('mode').onchange=syncRuleFields;
 $('endRule').onchange=syncRuleFields; $('noFit').onchange=syncRuleFields;
 for(const s of [$('m1'),$('m2')]) for(let i=1;i<=6;i++){const o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}
 
-const AI_NAMES={easy:'Easy CPU',medium:'Medium CPU',hard:'Hard CPU'};
-const AI_HINTS={easy:'Plays loosely and grabs what it can see. Good for learning the game.',
-  medium:'Races you for the space near its edge and seals off pockets. Sometimes settles for a decent move.',
-  hard:'Reads the whole board, walls you in, keeps room for its next roll and squeezes yours. Thinks two moves ahead.'};
-function syncAiHint(){ $('aiHint').textContent=AI_HINTS[$('ai').value]; }
-$('ai').onchange=syncAiHint;
+/* ---------- players ----------
+   Seats in turn order: 1 Blue top-left, 2 Red bottom-right, 3 Yellow top-right, 4 Green bottom-left.
+   A game's players live in S.players: [{n:name}] for people, [{n:name, cpu:'easy'|'medium'|'hard'}] for computers. */
+const SEAT_COLORS=['Blue','Red','Yellow','Green'];
+const CORNER_NAMES=['top-left','bottom-right','top-right','bottom-left'];
+const LEVEL_NAMES={easy:'Easy',medium:'Medium',hard:'Hard'};
+const seatsOf=S=>S.players.map((_,i)=>i+1);
+// What the setup screen is editing, per mode.
+const seatModel={
+  local:[{n:'Player 1'},{n:'Player 2'}],
+  cpu:[{n:'You'},{cpu:'medium'}],
+  host:[{n:'Player 1'}],
+};
+function seatList(){ return seatModel[playMode]||seatModel.local; }
+function renderSeats(){
+  const list=seatList(), box=$('seatRows'); box.innerHTML='';
+  list.forEach((s,i)=>{
+    const seat=i+1, row=document.createElement('div'); row.className='lrow seat';
+    const dot=`<span class="dotc d${seat}"></span>`;
+    const removable=playMode!=='host'&&i>=2&&i===list.length-1;
+    const rm=removable?`<button class="rm" data-rm aria-label="Remove ${SEAT_COLORS[i]}">×</button>`:'';
+    if(s.cpu){
+      row.innerHTML=`${dot}<span class="lk">${SEAT_COLORS[i]} computer</span><span class="sel"><select id="ai${seat}" aria-label="${SEAT_COLORS[i]} computer difficulty">
+        <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></span>${rm}`;
+      const sel=row.querySelector('select'); sel.value=s.cpu; sel.onchange=()=>{ s.cpu=sel.value; };
+    } else {
+      const label=playMode==='cpu'&&i===0?'You':`Player ${seat}`;
+      row.innerHTML=`${dot}<label class="lk" for="n${seat}">${label}</label><input id="n${seat}" maxlength="18" autocomplete="off" placeholder="${label}">${rm}`;
+      const inp=row.querySelector('input'); inp.value=s.n||''; inp.oninput=()=>{ s.n=inp.value; };
+    }
+    const b=row.querySelector('[data-rm]'); if(b) b.onclick=()=>{ list.pop(); renderSeats(); };
+    box.appendChild(row);
+  });
+  if(playMode!=='host'&&list.length<4){
+    const add=document.createElement('button'); add.className='lrow addrow'; add.id='addSeat';
+    const next=list.length+1;
+    add.innerHTML=`<span class="dotc d${next}"></span><span class="lk">${playMode==='cpu'?'Add a computer':'Add a player'}</span><span class="addtag">${SEAT_COLORS[next-1]}</span>`;
+    add.onclick=()=>{ list.push(playMode==='cpu'?{cpu:list[list.length-1].cpu||'medium'}:{n:`Player ${next}`}); renderSeats(); };
+    box.appendChild(add);
+  }
+  $('seatHint').hidden=playMode!=='host'&&playMode!=='cpu';
+  $('seatHint').textContent=playMode==='host'?'Up to three more players can join with your code: Red, then Yellow, then Green.'
+    :'Easy plays loosely. Medium races you for nearby space. Hard reads the whole board, walls you in and squeezes the room you need for your next roll.';
+}
 function readSettings(){
   const clamp=(v,a,b,d)=>{v=parseInt(v,10);return isNaN(v)?d:Math.max(a,Math.min(b,v));};
+  const players=seatList().map((s,i)=>s.cpu?{n:`${SEAT_COLORS[i]} CPU`,cpu:s.cpu}:{n:(s.n||'').trim()||(playMode==='cpu'&&i===0?'You':`Player ${i+1}`)});
   return {
-    n1:($('n1').value.trim()||'Player 1'),
-    n2:playMode==='cpu'?AI_NAMES[$('ai').value]:($('n2').value.trim()||'Player 2'),
-    vs:playMode==='cpu'?'cpu':'human', ai:$('ai').value,
+    players, vs:players.some(p=>p.cpu)?'cpu':'human',
     W:clamp(gw.value,8,120,25), H:clamp(gh.value,8,160,25),
     mode:$('mode').value, golds:clamp($('golds').value,1,60,7),
     endRule:$('endRule').value, rounds:clamp($('rounds').value,1,500,20), target:clamp($('target').value,5,95,50),
@@ -488,44 +546,46 @@ function readSettings(){
     scoring:$('scoring').value, diceMode:$('diceMode').value
   };
 }
-function newGame(S){
-  return {S, cells:new Array(S.W*S.H).fill(0), ctrl:new Array(S.W*S.H).fill(0), blocks:[], turn:1, round:1, dice:null, ghost:null,
-          passes:0, out:{1:false,2:false}, lives:{1:S.lives||3,2:S.lives||3}, over:null, history:[], lastMsg:'',
-          gold:S.mode==='power'?genGold(S.W,S.H,S.golds):null};
+function newGame(S,first){
+  const seats=seatsOf(S), lives={}, out={};
+  seats.forEach(q=>{ lives[q]=S.lives||3; out[q]=false; });
+  first=seats.includes(first)?first:1;
+  return {S, cells:new Array(S.W*S.H).fill(0), ctrl:new Array(S.W*S.H).fill(0), blocks:[], turn:first, first, round:1, dice:null, ghost:null,
+          passes:0, out, lives, over:null, history:[], lastMsg:'',
+          gold:S.mode==='power'&&seats.length>=2?genGold(S.W,S.H,S.golds,seats.length):null};
 }
-// Golden squares: random, but placed in pairs mirrored through the board's centre
-// (a 180° turn maps Player 1's corner onto Player 2's), so both players face the same layout.
-// The odd golden square goes in the middle, on a cell equally far from both corners when one exists
-function centreCell(W,H){
-  const xs=[...new Set([Math.floor((W-1)/2),Math.ceil((W-1)/2)])], ys=[...new Set([Math.floor((H-1)/2),Math.ceil((H-1)/2)])];
-  const all=xs.flatMap(x=>ys.map(y=>[x,y])), fair=all.filter(([x,y])=>x+y===(W-1-x)+(H-1-y));
-  const pick=fair.length?fair:all; return pick[Math.floor(Math.random()*pick.length)];
-}
-function genGold(W,H,n){
+// Golden squares: scattered at random for variety, then checked so no corner in play gets a
+// much better spread. For each layout we look at, per player, how many golden squares are
+// nearest their corner and how far away the gold is on average; lopsided layouts are rerolled.
+function genGold(W,H,n,N){
   n=Math.max(1,Math.min(n,Math.floor(W*H/6)));
-  const minCorner=Math.max(3,Math.round((W+H)/7));   // keep gold out of easy opening reach
-  const mir=(x,y)=>[W-1-x,H-1-y];
-  for(let spacing=3;spacing>=1;spacing--){
-    for(let attempt=0;attempt<60;attempt++){
-      const pts=[];
-      const ok=(x,y)=>x+y>=minCorner && (W-1-x)+(H-1-y)>=minCorner && pts.every(([a,b])=>Math.max(Math.abs(a-x),Math.abs(b-y))>=spacing);
-      if(n%2){ pts.push(centreCell(W,H)); }
-      let tries=0;
-      while(pts.length<n && tries<4000){
-        tries++;
-        const x=Math.floor(Math.random()*W), y=Math.floor(Math.random()*H), [mx,my]=mir(x,y);
-        if(x===mx&&y===my) continue;
-        if(Math.max(Math.abs(mx-x),Math.abs(my-y))<spacing) continue;
-        if(!ok(x,y)) continue; pts.push([x,y]);
-        if(!ok(mx,my)){ pts.pop(); continue; } pts.push([mx,my]);
-      }
-      if(pts.length===n) return pts.map(([x,y])=>y*W+x);
+  const P=Array.from({length:Math.max(2,N||2)},(_,i)=>i+1), corners=P.map(q=>cpuCorner(W,H,q));
+  const minCorner=Math.max(3,Math.round((W+H)/7));     // keep gold out of easy opening reach
+  const dist=(k,[cx,cy])=>Math.abs(k%W-cx)+Math.abs(((k/W)|0)-cy);
+  const unfairness=pts=>{
+    const near=P.map(()=>0), sum=P.map(()=>0);
+    for(const k of pts){
+      const d=corners.map(c=>dist(k,c)), m=Math.min(...d), win=d.filter(v=>v===m).length;
+      d.forEach((v,i)=>{ sum[i]+=v; if(v===m) near[i]+=1/win; });
     }
+    const avg=sum.map(v=>v/pts.length), mean=avg.reduce((a,b)=>a+b,0)/avg.length;
+    return {nearGap:Math.max(...near)-Math.min(...near), distGap:(Math.max(...avg)-Math.min(...avg))/mean};
+  };
+  let best=null, bestScore=1e9;
+  for(let attempt=0;attempt<600;attempt++){
+    const spacing=attempt<300?3:attempt<500?2:1, pts=[];
+    for(let tries=0;pts.length<n&&tries<3000;tries++){
+      const x=Math.floor(Math.random()*W), y=Math.floor(Math.random()*H), k=y*W+x;
+      if(corners.some(c=>dist(k,c)<minCorner)) continue;
+      if(pts.some(o=>Math.max(Math.abs(o%W-x),Math.abs(((o/W)|0)-y))<spacing)) continue;
+      pts.push(k);
+    }
+    if(pts.length<n) continue;
+    const u=unfairness(pts), score=u.nearGap+4*u.distGap;
+    if(score<bestScore){ best=pts; bestScore=score; }
+    if(u.nearGap<=1&&u.distGap<=0.1) return pts;        // fair enough: no corner clearly ahead
   }
-  // fallback: tiny boards — mirrored pairs with no spacing rule
-  const out=new Set(); if(n%2){ const [cx,cy]=centreCell(W,H); out.add(cy*W+cx); }
-  while(out.size<n){ const k=Math.floor(Math.random()*W*H), m=W*H-1-k; if(k!==m&&!out.has(k)&&!out.has(m)){out.add(k);out.add(m);} }
-  return [...out].slice(0,n);
+  return best||[];
 }
 $('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } cancelCpu(); G=newGame(readSettings()); V=null; showGame(); };
 $('resume').onclick=()=>{ const g=load(); if(g) G=migrate(g); showGame(); };
@@ -536,14 +596,24 @@ function load(){ try{ const t=localStorage.getItem(KEY); return t?JSON.parse(t):
 
 /* ---------- rules ---------- */
 const idx=(x,y)=>y*G.S.W+x;
+const seats=()=>seatsOf(G.S);
 const hasBlocks=p=>G.blocks.some(b=>b.p===p);
-const nameOf=p=>p===1?G.S.n1:G.S.n2;
+const nameOf=p=>G.S.players[p-1]?.n||`Player ${p}`;
+const isCpuSeat=p=>!!G&&!!G.S.players[p-1]?.cpu;
+const cornerOf=p=>cpuCorner(G.S.W,G.S.H,p);
+// Everyone has a block on the board (or is out): only then can space count as sealed.
+const everyoneOnBoard=()=>seats().every(q=>hasBlocks(q)||G.out[q]);
+function nextSeat(from){
+  const P=seats(), i0=P.indexOf(from);
+  for(let i=1;i<=P.length;i++){ const q=P[(i0+i)%P.length]; if(!G.out[q]) return q; }
+  return null;
+}
 function valid(p,x,y,w,h){
   const {W,H}=G.S, c=G.cells;
   if(x<0||y<0||x+w>W||y+h>H) return false;
   for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) if(c[idx(i,j)]) return false;
   if(!hasBlocks(p)){
-    const cx=p===1?0:W-1, cy=p===1?0:H-1;
+    const [cx,cy]=cornerOf(p);
     return cx>=x&&cx<x+w&&cy>=y&&cy<y+h;
   }
   for(let i=x;i<x+w;i++){ if(y>0&&c[idx(i,y-1)]===p) return true; if(y+h<H&&c[idx(i,y+h)]===p) return true; }
@@ -555,21 +625,22 @@ function allSpots(p,a,b){
   for(const[w,h] of dims) for(let y=0;y<=H-h;y++) for(let x=0;x<=W-w;x++) if(valid(p,x,y,w,h)) out.push({x,y,w,h});
   return out;
 }
-// Empty regions with the players they touch. owner: 1, 2, 0 = disputed, -1 = nobody
+// Empty regions and who touches them. owner: a seat when only that player touches it,
+// 0 = disputed (or not everyone has played yet), -1 = touched by nobody
 function regions(){
   const {W,H}=G.S,c=G.cells,seen=new Uint8Array(W*H),res=[];
-  const both=hasBlocks(1)&&hasBlocks(2);
+  const ready=everyoneOnBoard();
   for(let s=0;s<W*H;s++){
     if(c[s]||seen[s]) continue;
-    let t1=false,t2=false; const cells=[], st=[s]; seen[s]=1;
+    let mask=0; const cells=[], st=[s]; seen[s]=1;
     while(st.length){
       const k=st.pop(); cells.push(k); const x=k%W,y=(k/W)|0;
       if(x>0)visit(k-1); if(x<W-1)visit(k+1); if(y>0)visit(k-W); if(y<H-1)visit(k+W);
     }
-    function visit(n){ const v=c[n]; if(v===1)t1=true; else if(v===2)t2=true; else if(!seen[n]){seen[n]=1;st.push(n);} }
+    function visit(n){ const v=c[n]; if(v) mask|=1<<v; else if(!seen[n]){seen[n]=1;st.push(n);} }
     let owner=-1;
-    if(!both) owner=0;                       // before both have played, everything is open
-    else if(t1&&t2) owner=0; else if(t1) owner=1; else if(t2) owner=2;
+    if(!ready) owner=0;
+    else if(mask) owner=(mask&(mask-1))?0:Math.log2(mask);
     res.push({cells,size:cells.length,owner});
   }
   return res;
@@ -577,64 +648,73 @@ function regions(){
 let regionCache=null;
 function getRegions(){ return regionCache||(regionCache=regions()); }
 function scores(){
-  // placed = squares covered by blocks; controlled = sealed space (filled in or still open)
-  let p1=0,p2=0,s1=0,s2=0,disputed=0;
-  for(let k=0;k<G.cells.length;k++){ const v=G.cells[k]; if(!v) continue;
-    if(G.ctrl[k]){ if(v===1)s1++; else s2++; } else { if(v===1)p1++; else p2++; } }
-  for(const r of getRegions()){ if(r.owner===1)s1+=r.size; else if(r.owner===2)s2+=r.size; else if(r.owner===0)disputed+=r.size; }
-  if(G.S.scoring==='placed'){s1=0;s2=0;}
-  let g1=0,g2=0,gfree=0;
+  // per seat: placed = squares covered by blocks; ctrl = sealed space (filled in or still open)
+  const P=seats(), per={};
+  P.forEach(q=>per[q]={placed:0,ctrl:0,gold:0});
+  let disputed=0;
+  for(let k=0;k<G.cells.length;k++){ const v=G.cells[k]; if(!v||!per[v]) continue; if(G.ctrl[k]) per[v].ctrl++; else per[v].placed++; }
+  for(const r of getRegions()){ if(r.owner>0&&per[r.owner]) per[r.owner].ctrl+=r.size; else if(r.owner===0) disputed+=r.size; }
+  if(G.S.scoring==='placed') P.forEach(q=>per[q].ctrl=0);
+  let gfree=0;
   if(G.gold){
     const own=new Map();
-    if(G.S.scoring!=='placed') for(const r of getRegions()) if(r.owner===1||r.owner===2) for(const k of r.cells) own.set(k,r.owner);
-    for(const k of G.gold){ const o=G.cells[k]||own.get(k)||0; if(o===1)g1++; else if(o===2)g2++; else gfree++; }
+    if(G.S.scoring!=='placed') for(const r of getRegions()) if(r.owner>0) for(const k of r.cells) own.set(k,r.owner);
+    for(const k of G.gold){ const o=G.cells[k]||own.get(k)||0; if(o&&per[o]) per[o].gold++; else gfree++; }
   }
   const power=!!G.gold;
-  return {p1,p2,s1,s2,disputed,g1,g2,gfree,power,sq1:p1+s1,sq2:p2+s2,
-          t1:power?g1:p1+s1, t2:power?g2:p2+s2};
+  P.forEach(q=>{ const r=per[q]; r.sq=r.placed+r.ctrl; r.total=power?r.gold:r.sq; });
+  return {per,disputed,gfree,power};
+}
+// Seats ranked best first (gold, then squares, in Power Squares).
+function standings(sc){
+  return seats().map(q=>({q,...sc.per[q]})).sort((a,b)=>b.total-a.total||(sc.power?b.sq-a.sq:0));
 }
 // "fill" scoring: colour in every empty area that only one player can reach
 function fillSealed(){
   if(G.S.scoring!=='fill') return 0;
   let n=0;
-  for(const r of getRegions()){ if(r.owner!==1&&r.owner!==2) continue;
+  for(const r of getRegions()){ if(r.owner<=0) continue;
     for(const k of r.cells){ G.cells[k]=r.owner; G.ctrl[k]=1; } n+=r.size; }
   if(n) regionCache=null;
   return n;
 }
 function checkEnd(){
-  const S=G.S, sc=scores(), total=S.W*S.H;
-  if(G.out[1]&&G.out[2]) return 'Neither player can place their roll.';
+  const S=G.S, sc=scores(), total=S.W*S.H, P=seats();
+  if(P.every(q=>G.out[q])) return P.length===2?'Neither player can place their roll.':'No one can place their roll.';
   if(sc.power){
     const n=G.gold.length;
-    if(sc.g1*2>n) return `${S.n1} holds a majority of the gold.`;
-    if(sc.g2*2>n) return `${S.n2} holds a majority of the gold.`;
+    for(const q of P) if(sc.per[q].gold*2>n) return `${nameOf(q)} holds a majority of the gold.`;
     if(sc.gfree===0) return 'Every golden square has been captured.';
   }
-  if(S.endRule==='sealed' && hasBlocks(1)&&hasBlocks(2) && sc.disputed===0) return 'No disputed space is left.';
+  if(S.endRule==='sealed' && everyoneOnBoard() && sc.disputed===0) return 'No disputed space is left.';
   if(S.endRule==='target'){ const need=Math.ceil(total*S.target/100);
-    if(sc.t1>=need) return `${S.n1} reached ${S.target}% of the paper.`; if(sc.t2>=need) return `${S.n2} reached ${S.target}% of the paper.`; }
+    for(const q of P) if(sc.per[q].total>=need) return `${nameOf(q)} reached ${S.target}% of the paper.`; }
   if(S.endRule==='rounds' && G.round>S.rounds) return `${S.rounds} rounds played.`;
-  if(sc.p1+sc.p2===total) return 'The paper is full.';
+  if(G.cells.every(v=>v)) return 'The paper is full.';
   if(S.noFit==='pass'&&S.stall>0 && G.passes>=S.stall) return `${S.stall} passes in a row with no block placed.`;
   return null;
 }
 
 /* ---------- computer opponent (BEGIN-AI) ----------
    Pure functions: they read a board snapshot and never touch the page or G.
-   ctx = {W, H, cells, gold, scoring, noFit, lives:{1,2}}
+   ctx = {W, H, cells, gold, scoring, noFit, lives:{seat:n}, players:[1..N], out:{seat:bool}}
+   Seats: 1 top-left, 2 bottom-right, 3 top-right, 4 bottom-left.
 
-   How each level thinks:
+   How each level thinks (with more than one opponent, "them" means all of them together):
    - easy:   half its moves are random; otherwise grabs whatever seals space or gold right now.
    - medium: plays the territory race, but short-sighted: for empty squares within a few steps
              of the front it asks who gets there first, and moves to win more of them. It also
              settles for a decent move now and then.
    - hard:   plays the race across the whole board, keeps room for its own next roll and squeezes
-             yours (fewer places for your next block, harder when you're on your last life), and
-             searches two moves deep: for its best options it imagines your strongest reply to a
-             spread of rolls and picks the move that holds up best. Knows golden squares too.
-   Benchmarked: medium beats easy ~93%, hard beats medium ~66% (73% in Power Squares). */
+             the others' (fewer places for their next block, hardest on the player after it and on
+             anyone down to their last life), and searches two moves deep against the next player:
+             for its best options it imagines that player's strongest reply to a spread of rolls
+             and picks the move that holds up best. Knows golden squares too.
+   Benchmarked (tools/ai-bench): 2 players: medium beats easy ~90%, hard beats medium ~64%.
+   3 players (hard, medium, easy): hard 56%, medium 31%, easy 14%. 4 players: hard wins ~37%
+   against three mediums and medium ~48% against three easies (fair share is 25%). */
 const CPU_ROLLS=(()=>{ const r=[]; for(let a=1;a<=6;a++) for(let b=a;b<=6;b++) r.push([a,b,(a===b?1:2)/36]); return r; })();
+function cpuCorner(W,H,q){ return q===1?[0,0]:q===2?[W-1,H-1]:q===3?[W-1,0]:[0,H-1]; }
 
 function cpuPrefix(c,W,H,pred){
   const W1=W+1, P=new Int32Array(W1*(H+1));
@@ -649,7 +729,7 @@ function cpuRect(P,W,H,x0,y0,x1,y1){            // sum over [x0,x1) x [y0,y1), c
 // A tool for one board position: can player q put a w×h block at (x,y)?
 function cpuFitter(c,W,H,q){
   const F=cpuPrefix(c,W,H,v=>v!==0), O=cpuPrefix(c,W,H,v=>v===q);
-  const has=cpuRect(O,W,H,0,0,W,H)>0, cx=q===1?0:W-1, cy=q===1?0:H-1;
+  const has=cpuRect(O,W,H,0,0,W,H)>0, [cx,cy]=cpuCorner(W,H,q);
   return (x,y,w,h)=>{
     if(x<0||y<0||x+w>W||y+h>H) return false;
     if(cpuRect(F,W,H,x,y,x+w,y+h)) return false;
@@ -673,38 +753,40 @@ function cpuFitChance(c,W,H,q){
   }
   return p;
 }
-// Territory picture of board c from player p's side.
+// Territory picture of board c from player p's side (everyone else counts as "them").
 function cpuAnalyse(ctx,c,p,race,horizon){
-  const {W,H}=ctx, N=W*H, o=p===1?2:1, gold=ctx.gold;
-  let hasP=false,hasO=false;
-  for(let k=0;k<N;k++){ if(c[k]===p) hasP=true; else if(c[k]===o) hasO=true; }
+  const {W,H}=ctx, N=W*H, gold=ctx.gold, players=ctx.players||[1,2], out=ctx.out||{};
+  const has={}; for(let k=0;k<N;k++) if(c[k]) has[c[k]]=true;
+  const ready=players.every(q=>has[q]||out[q]);
   const r={exP:0,exO:0,goldP:0,goldO:0,vorP:0,vorO:0,gVorP:0,gVorO:0};
-  // sealed space: empty areas only one side touches (counted only once both sides are on the board)
+  // sealed space: empty areas only one player touches (counted once everyone is on the board)
   const reg=new Int32Array(N).fill(-1), owner=[];
-  if(hasP&&hasO){
+  if(ready){
     const st=new Int32Array(N);
     for(let s=0;s<N;s++){
       if(c[s]||reg[s]>=0) continue;
-      const id=owner.length; let n=0,top=0,tp=false,to=false; st[top++]=s; reg[s]=id;
+      const id=owner.length; let n=0,top=0,mask=0; st[top++]=s; reg[s]=id;
       while(top){ const k=st[--top]; n++; const x=k%W;
         const nb=[x>0?k-1:-1, x<W-1?k+1:-1, k-W, k+W];
         for(const m of nb){ if(m<0||m>=N) continue; const v=c[m];
-          if(v===p) tp=true; else if(v===o) to=true; else if(!v&&reg[m]<0){ reg[m]=id; st[top++]=m; } } }
-      const ow=tp&&!to?p:to&&!tp?o:0; owner.push(ow);
-      if(ow===p) r.exP+=n; else if(ow===o) r.exO+=n;
+          if(v) mask|=1<<v; else if(reg[m]<0){ reg[m]=id; st[top++]=m; } } }
+      const ow=mask&&!(mask&(mask-1))?Math.log2(mask):0; owner.push(ow);
+      if(ow===p) r.exP+=n; else if(ow) r.exO+=n;
     }
   }
   if(gold) for(const k of gold){
-    const v=c[k]; const ow=v||(reg[k]>=0?owner[reg[k]]:0);
-    if(ow===p) r.goldP++; else if(ow===o) r.goldO++;
+    const ow=c[k]||(reg[k]>=0?owner[reg[k]]:0);
+    if(ow===p) r.goldP++; else if(ow) r.goldO++;
   }
   if(!race) return r;
-  // race: breadth-first from both sides at once; each empty square goes to whoever reaches it first
+  // race: breadth-first from every active player at once; each empty square goes to whoever reaches it first
   const dist=new Int16Array(N).fill(-1), lab=new Uint8Array(N), q=new Int32Array(N); let qh=0,qt=0;
-  for(let k=0;k<N;k++) if(c[k]){ dist[k]=0; lab[k]=c[k]===p?1:2; q[qt++]=k; }
-  const seed=(who,k)=>{ if(!c[k]&&dist[k]<0){ dist[k]=0; lab[k]=who; q[qt++]=k; } };
-  if(!hasP) seed(1, p===1?0:N-1);
-  if(!hasO) seed(2, o===1?0:N-1);
+  for(let k=0;k<N;k++){ const v=c[k]; if(!v) continue; dist[k]=0; if(out[v]) continue; lab[k]=v===p?1:2; q[qt++]=k; }
+  for(const s of players){
+    if(has[s]||out[s]) continue;
+    const [cx,cy]=cpuCorner(W,H,s), k=cy*W+cx;
+    if(!c[k]&&dist[k]<0){ dist[k]=0; lab[k]=s===p?1:2; q[qt++]=k; }
+  }
   while(qh<qt){ const k=q[qh++], d=dist[k], L=lab[k], x=k%W;
     const nb=[x>0?k-1:-1, x<W-1?k+1:-1, k-W, k+W];
     for(const m of nb){ if(m<0||m>=N||c[m]) continue;
@@ -720,11 +802,11 @@ const CPU_LEVELS={
   medium:{random:0,   race:0.55, gRace:8,  noise:4, slip:0.15, horizon:4},
   hard:  {random:0,   race:1,    gRace:14, noise:0.3, search:true, look:true},
 };
-// Rolls the hard computer imagines you getting next: a spread of small to large blocks.
+// Rolls the hard computer imagines the next player getting: a spread of small to large blocks.
 const CPU_REPLY_ROLLS=[[1,3],[2,3],[2,5],[3,4],[4,5],[5,6]];
 function cpuScore(ctx,before,a,cfg,p){
   const terr=ctx.scoring==='placed'?0.35:1, power=!!ctx.gold;
-  const ex=cfg.ex||1; let v=ex*terr*(a.exP-before.exP) - 1.15*ex*terr*(a.exO-before.exO);
+  let v=terr*(a.exP-before.exP) - 1.15*terr*(a.exO-before.exO);
   if(power) v+=40*((a.goldP-before.goldP)-(a.goldO-before.goldO));
   if(cfg.race){ v+=cfg.race*(a.vorP-a.vorO)*(power?0.25:1); if(power) v+=cfg.gRace*(a.gVorP-a.gVorO); }
   return v;
@@ -732,7 +814,7 @@ function cpuScore(ctx,before,a,cfg,p){
 function cpuPick(ctx,p,dice,level,rnd,budgetMs){
   rnd=rnd||Math.random;
   const cfg=CPU_LEVELS[level]||CPU_LEVELS.medium;
-  const {W,H}=ctx, N=W*H, o=p===1?2:1;
+  const {W,H}=ctx, N=W*H, players=ctx.players||[1,2], out=ctx.out||{};
   const base=Int8Array.from(ctx.cells);
   const spots=cpuSpots(base,W,H,p,dice[0],dice[1]);
   if(spots.length<=1) return spots[0]||null;
@@ -742,20 +824,27 @@ function cpuPick(ctx,p,dice,level,rnd,budgetMs){
   const put=(src,dst,s,who)=>{ dst.set(src); for(let j=s.y;j<s.y+s.h;j++) for(let i=s.x;i<s.x+s.w;i++) dst[j*W+i]=who; };
   let scored=spots.map(s=>{ put(base,work,s,p); const v=cpuScore(ctx,before,cpuAnalyse(ctx,work,p,cfg.race>0,cfg.horizon),cfg,p)+rnd()*cfg.noise; return {s,v}; });
   scored.sort((x,y)=>y.v-x.v);
-  const lives=ctx.lives||{1:3,2:3}, outRule=ctx.noFit!=='pass';
-  const kSelf=outRule?(lives[p]<=1?70:28):10, kOpp=outRule?(lives[o]<=1?60:24):10;
+  // opponents still playing, starting with the one who moves next
+  const i0=players.indexOf(p), opps=[];
+  for(let i=1;i<players.length;i++){ const q=players[(i0+i)%players.length]; if(q!==p&&!out[q]) opps.push(q); }
+  const lives=ctx.lives||{}, outRule=ctx.noFit!=='pass', livesOf=q=>lives[q]??3;
+  const kSelf=outRule?(livesOf(p)<=1?70:28):10;
   if(cfg.look){
     const top=scored.slice(0,14);
-    for(const t of top){ put(base,work,t.s,p); t.fs=cpuFitChance(work,W,H,p); t.fo=cpuFitChance(work,W,H,o); t.v+=kSelf*t.fs-kOpp*t.fo; }
+    for(const t of top){
+      put(base,work,t.s,p); t.fs=cpuFitChance(work,W,H,p); t.squeeze=0;
+      opps.forEach((q,i)=>{ const k=outRule?(livesOf(q)<=1?60:24):10; t.squeeze+=(i===0?1:0.5)*k*cpuFitChance(work,W,H,q); });
+      t.v+=kSelf*t.fs-t.squeeze;
+    }
     top.sort((x,y)=>y.v-x.v); scored=top;
   }
   if(cfg.slip&&rnd()<cfg.slip) return scored[Math.floor(rnd()*Math.min(4,scored.length))].s;   // medium: sometimes settles for a decent move
-  if(!cfg.search) return scored[0].s;
+  if(!cfg.search||!opps.length) return scored[0].s;
 
-  // Hard: two-move search. For the strongest candidates, imagine the opponent's best reply to a
-  // spread of rolls (judged the way a sharp player would), and keep the move that holds up best.
-  const kMiss=outRule?(lives[o]<=1?60:22):8;
-  const t0=Date.now(), budget=budgetMs||(N>900?650:380);
+  // Hard: two-move search against the next player. For the strongest candidates, imagine their
+  // best reply to a spread of rolls (judged the way a sharp player would), keep what holds up best.
+  const o=opps[0], kMiss=outRule?(livesOf(o)<=1?60:22):8;
+  const t0=Date.now(), budget=budgetMs||(N>900?650:380)*(players.length>2?0.8:1);
   const reply=new Int8Array(N), oppCfg=CPU_LEVELS.hard;
   const K=Math.min(scored.length, N>900?6:8);
   let best=null;
@@ -767,7 +856,6 @@ function cpuPick(ctx,p,dice,level,rnd,budgetMs){
     for(const [ra,rb] of CPU_REPLY_ROLLS){
       const oSpots=cpuSpots(work,W,H,o,ra,rb);
       if(!oSpots.length){ const a=cpuAnalyse(ctx,work,p,true); total+=cpuScore(ctx,before,a,cfg,p)+kMiss; continue; }
-      // their best reply by the same judgement
       let bv=-1e9, bs=null;
       const step=oSpots.length>160?Math.ceil(oSpots.length/160):1;     // thin out huge reply lists on big boards
       for(let j=0;j<oSpots.length;j+=step){ put(work,reply,oSpots[j],o); const v=cpuScore(ctx,mid,cpuAnalyse(ctx,reply,o,true),oppCfg,o); if(v>bv){ bv=v; bs=oSpots[j]; } }
@@ -775,27 +863,29 @@ function cpuPick(ctx,p,dice,level,rnd,budgetMs){
       total+=cpuScore(ctx,before,cpuAnalyse(ctx,reply,p,true),cfg,p);
     }
     let v=total/CPU_REPLY_ROLLS.length;
-    v+=cfg.look?(kSelf*cand.fs-kOpp*cand.fo):kSelf*cpuFitChance(work,W,H,p);
+    v+=cfg.look?(kSelf*cand.fs-cand.squeeze):kSelf*cpuFitChance(work,W,H,p);
     if(!best||v>best.v) best={s:cand.s,v};
   }
   return best.s;
 }
 /* (END-AI) */
 
+
 /* ---------- computer turns ----------
-   The computer is always Player 2. Its turn plays out in visible steps: roll, think and show
+   Any seat can be a computer. Its turn plays out in visible steps: roll, think and show
    where it's going, then place. Leaving the board, undoing or starting over cancels it. */
 let cpuTimer=null, cpuGen=0;
-const isCpuGame=()=>!!G&&G.S&&G.S.vs==='cpu';
-const isCpuTurn=()=>isCpuGame()&&G.turn===2&&!G.over;
+const isCpuGame=()=>!!G&&G.S&&G.S.players.some(p=>p.cpu);
+const isCpuTurn=()=>!!G&&!G.over&&isCpuSeat(G.turn)&&!online();
 function cancelCpu(){ clearTimeout(cpuTimer); cpuTimer=null; cpuGen++; }
+function cpuCtx(){ return {W:G.S.W,H:G.S.H,cells:G.cells,gold:G.gold,scoring:G.S.scoring,noFit:G.S.noFit,lives:G.lives,players:seats(),out:G.out}; }
 function maybeCpu(){
-  if(!isCpuTurn()||online()||$('game').hidden||cpuTimer) return;
-  const gen=cpuGen;
-  const step=(ms,fn)=>{ cpuTimer=setTimeout(()=>{ cpuTimer=null; if(gen!==cpuGen||!isCpuTurn()||$('game').hidden) return; fn(); },ms); };
-  const who=nameOf(2);
+  if(!isCpuTurn()||$('game').hidden||cpuTimer) return;
+  const gen=cpuGen, seat=G.turn;
+  const step=(ms,fn)=>{ cpuTimer=setTimeout(()=>{ cpuTimer=null; if(gen!==cpuGen||!isCpuTurn()||G.turn!==seat||$('game').hidden) return; fn(); },ms); };
+  const who=nameOf(seat);
   if(!G.dice){
-    step(700,()=>{ snapshot(); const a=1+Math.floor(Math.random()*6), b=1+Math.floor(Math.random()*6);
+    step(650,()=>{ snapshot(); const a=1+Math.floor(Math.random()*6), b=1+Math.floor(Math.random()*6);
       applyRoll(a,b); G.ghost=null; G.cpuPlan=false;
       if(!G.noFit) setMsg(`${who} rolled a ${a}×${b} and is thinking…`);
       shakeDice(); render(); });
@@ -803,17 +893,17 @@ function maybeCpu(){
   }
   if(G.noFit){ step(1300,()=>noFitContinue()); return; }
   if(!G.cpuPlan||!G.ghost){
-    step(350,()=>{   // the search runs here; the "thinking" message is already on screen
-      const c=cpuPick({W:G.S.W,H:G.S.H,cells:G.cells,gold:G.gold,scoring:G.S.scoring,noFit:G.S.noFit,lives:G.lives},2,G.dice,G.S.ai||'medium');
+    step(320,()=>{   // the search runs here; the "thinking" message is already on screen
+      const c=cpuPick(cpuCtx(),seat,G.dice,G.S.players[seat-1].cpu||'medium');
       if(!c){ G.noFit=true; render(); return; }
       G.ghost={...c}; G.cpuPlan=true; revealGhost(); setMsg(`${who} is placing a ${c.w}×${c.h}…`); render(); });
     return;
   }
-  step(750,()=>{ G.cpuPlan=false; place(); });
+  step(700,()=>{ G.cpuPlan=false; place(); });
 }
 
 /* ---------- turn flow ---------- */
-function snapshot(){ const {history,...rest}=G; G.history.push(JSON.stringify(rest)); if(G.history.length>60) G.history.shift(); }
+function snapshot(){ const {history,...rest}=G; G.history.push(JSON.stringify(rest)); if(G.history.length>80) G.history.shift(); }
 function setMsg(t,cls){ G.lastMsg=t; G.msgCls=cls||''; }
 function applyRoll(a,b){
   G.dice=[a,b]; G.ghost=null;
@@ -824,7 +914,7 @@ function applyRoll(a,b){
     setMsg(G.S.noFit==='out'
       ? `A ${a}×${b} block doesn't fit anywhere. ${nameOf(G.turn)} loses a life${left>0?` (${left} left)`:' and is out'}.`
       : `A ${a}×${b} block doesn't fit anywhere. Turn passes.`,'bad');
-  } else if(!hasBlocks(G.turn)){ G.ghost={...spots[0]}; setMsg(`First block must cover your corner. Double-tap or Rotate to turn it, then Place.`); }
+  } else if(!hasBlocks(G.turn)){ G.ghost={...spots[0]}; setMsg(`First block must cover your ${CORNER_NAMES[G.turn-1]} corner. Double-tap or Rotate to turn it, then Place.`); }
   else setMsg(`Tap the board to drop your ${a}×${b} block. Drag to move, double-tap to rotate, then Place.`);
   if(G.ghost) revealGhost();
 }
@@ -840,9 +930,12 @@ function roll(){
 function endTurn(){
   regionCache=null;
   G.dice=null; G.ghost=null; G.noFit=false;
-  const other=G.turn===1?2:1;
-  if(G.turn===2 || G.out[other]) G.round++;   // a round ends after P2, or after each solo turn
-  if(!G.out[other]) G.turn=other;
+  const nx=nextSeat(G.turn);
+  if(nx!==null){   // a round ends each time play comes back round to whoever went first
+    const n=seats().length, f=G.first||1, pos=q=>(q-f+n)%n;
+    if(pos(nx)<=pos(G.turn)) G.round++;
+    G.turn=nx;
+  }
   const why=checkEnd();
   if(why) G.over={why};
   commit(); render();
@@ -875,7 +968,7 @@ function invalidReason(g){
   const {W,H}=G.S;
   if(g.x<0||g.y<0||g.x+g.w>W||g.y+g.h>H) return 'That runs off the paper.';
   for(let j=g.y;j<g.y+g.h;j++) for(let i=g.x;i<g.x+g.w;i++) if(G.cells[idx(i,j)]) return 'That overlaps a block.';
-  if(!hasBlocks(G.turn)) return 'Your first block has to cover your corner square.';
+  if(!hasBlocks(G.turn)) return `Your first block has to cover your ${CORNER_NAMES[G.turn-1]} corner square.`;
   return 'It must share an edge with one of your blocks.';
 }
 function clampGhost(g){ const {W,H}=G.S; g.x=Math.max(0,Math.min(W-g.w,g.x)); g.y=Math.max(0,Math.min(H-g.h,g.y)); return g; }
@@ -906,9 +999,9 @@ function suggest(){
 function undo(){
   cancelCpu();
   if(isCpuGame()){
-    // step back to just before your last placement, keeping your roll
+    // step back to just before a person's last placement, keeping their roll
     const h=G.history; let i=h.length-1;
-    for(;i>=0;i--){ const st=JSON.parse(h[i]); if(st.turn===1&&st.dice&&!st.noFit) break; }
+    for(;i>=0;i--){ const st=JSON.parse(h[i]); if(!st.S.players[st.turn-1]?.cpu&&st.dice&&!st.noFit) break; }
     if(i<0){ setMsg('Nothing to undo yet.'); render(); return; }
     const st=JSON.parse(h[i]); h.length=i; G=st; G.history=h; G.cpuPlan=false;
     regionCache=null; setMsg('Undone. Place your block again.'); save(); render(); return;
@@ -1013,13 +1106,14 @@ function draw(){
   if(cv.width!==Math.round(b.w*dpr)||cv.height!==Math.round(b.h*dpr)){ cv.width=Math.round(b.w*dpr); cv.height=Math.round(b.h*dpr); }
   const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
   const {W,H}=G.S, s=V.s, ox=V.ox, oy=V.oy;
-  const C={bg:css('--paper'),paper:css('--paper-2'),line:css('--line'),strong:css('--line-strong'),ink:css('--ink'),p1:css('--p1'),p2:css('--p2'),p1s:css('--p1-soft'),p2s:css('--p2-soft'),bad:css('--bad'),mono:css('--f-mono')};
+  const C={bg:css('--paper'),paper:css('--paper-2'),line:css('--line'),strong:css('--line-strong'),ink:css('--ink'),bad:css('--bad'),mono:css('--f-mono')};
+  const PC=[0,1,2,3,4].map(q=>q?css('--p'+q):''), PS=[0,1,2,3,4].map(q=>q?css('--p'+q+'-soft'):'');
   x.fillStyle=C.bg; x.fillRect(0,0,b.w,b.h);
   x.fillStyle=C.paper; x.fillRect(ox,oy,W*s,H*s);
   // controlled territory tint
   if(G.S.scoring==='territory') for(const r of getRegions()){
-    if(r.owner!==1&&r.owner!==2) continue;
-    x.fillStyle=r.owner===1?C.p1s:C.p2s; x.globalAlpha=.75;
+    if(r.owner<=0) continue;
+    x.fillStyle=PS[r.owner]; x.globalAlpha=.75;
     for(const k of r.cells) x.fillRect(ox+(k%W)*s,oy+((k/W)|0)*s,s,s);
     x.globalAlpha=1;
   }
@@ -1035,10 +1129,9 @@ function draw(){
   for(let j=j0;j<=j1;j++) if(j%5===0||j===H) hline(j,C.strong);
   // corner markers
   x.font=`700 ${Math.max(8,s*.7)}px ${C.mono}`; x.textAlign='center'; x.textBaseline='middle';
-  if(!G.cells[0]){ x.fillStyle=C.p1; x.fillText('1',ox+s/2,oy+s/2+1); }
-  if(!G.cells[W*H-1]){ x.fillStyle=C.p2; x.fillText('2',ox+(W-.5)*s,oy+(H-.5)*s+1); }
+  for(const q of seats()){ const [cx,cy]=cornerOf(q); if(!G.cells[cy*W+cx]){ x.fillStyle=PC[q]; x.fillText(String(q),ox+(cx+.5)*s,oy+(cy+.5)*s+1); } }
   // claimed squares: one solid colour per player, so touching blocks merge into one shape
-  const c=G.cells, fillCol={1:C.p1,2:C.p2};
+  const c=G.cells, fillCol=PC;
   for(let j=j0;j<j1;j++) for(let i=i0;i<i1;i++){
     const v=c[j*W+i]; if(!v) continue;
     x.fillStyle=fillCol[v]; x.globalAlpha=G.ctrl[j*W+i]?.62:1;
@@ -1076,7 +1169,8 @@ function draw(){
       const r=s*(taken?.3:.36), cx=X+s/2, cy=Y+s/2;
       x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r,cy); x.lineTo(cx,cy+r); x.lineTo(cx-r,cy); x.closePath();
       x.fillStyle=gold; x.fill();
-      x.lineWidth=Math.max(1,s*.07); x.strokeStyle=taken?C.paper:C.ink; x.globalAlpha=taken?1:.5; x.stroke(); x.globalAlpha=1;
+      if(taken){ x.lineWidth=Math.max(2,s*.14); x.strokeStyle=C.paper; x.stroke(); }
+      x.lineWidth=Math.max(1,s*.06); x.strokeStyle=C.ink; x.globalAlpha=taken?.9:.5; x.stroke(); x.globalAlpha=1;
     }
   }
   const last=G.blocks[G.blocks.length-1];
@@ -1084,13 +1178,18 @@ function draw(){
   // ghost
   const g=G.ghost;
   if(g&&!G.over){
-    const ok=valid(G.turn,g.x,g.y,g.w,g.h), col=G.turn===1?C.p1:C.p2;
-    const X=ox+g.x*s, Y=oy+g.y*s;
-    x.fillStyle=ok?(G.turn===1?C.p1s:C.p2s):C.bad; x.globalAlpha=ok?.9:.35;
-    x.fillRect(X,Y,g.w*s,g.h*s); x.globalAlpha=1;
-    x.strokeStyle=ok?col:C.bad; x.lineWidth=Math.max(2,s*.18); x.setLineDash(ok?[]:[5,4]);
-    x.strokeRect(X+1,Y+1,g.w*s-2,g.h*s-2); x.setLineDash([]);
-    x.fillStyle=ok?col:C.bad; x.font=`700 ${Math.max(10,Math.min(s*.7,18))}px ${C.mono}`;
+    const ok=valid(G.turn,g.x,g.y,g.w,g.h), col=ok?PC[G.turn]:C.ink;
+    const X=ox+g.x*s, Y=oy+g.y*s, gw2=g.w*s, gh2=g.h*s;
+    if(ok){ x.fillStyle=PS[G.turn]; x.globalAlpha=.9; x.fillRect(X,Y,gw2,gh2); x.globalAlpha=1; }
+    else {   // not allowed here: grey hatching, so it can't be mistaken for any player's colour
+      x.save(); x.beginPath(); x.rect(X,Y,gw2,gh2); x.clip();
+      x.fillStyle=C.ink; x.globalAlpha=.12; x.fillRect(X,Y,gw2,gh2); x.globalAlpha=.35;
+      x.strokeStyle=C.ink; x.lineWidth=1.5; x.beginPath();
+      for(let d=-gh2;d<gw2;d+=8){ x.moveTo(X+d,Y+gh2); x.lineTo(X+d+gh2,Y); } x.stroke(); x.restore(); x.globalAlpha=1;
+    }
+    x.strokeStyle=col; x.lineWidth=Math.max(2,s*.18); x.setLineDash(ok?[]:[5,4]);
+    x.strokeRect(X+1,Y+1,gw2-2,gh2-2); x.setLineDash([]);
+    x.fillStyle=col; x.font=`700 ${Math.max(10,Math.min(s*.7,18))}px ${C.mono}`;
     if(g.w*s>=28&&g.h*s>=16) x.fillText(`${g.w}×${g.h}`,X+g.w*s/2,Y+g.h*s/2+1);
   }
 }
@@ -1105,86 +1204,110 @@ new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:tr
 /* ---------- UI render ---------- */
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 function dieHTML(n){ let s=`<div class="die${n?'':' empty'}" aria-label="${n?'Die showing '+n:'Not rolled'}">`; for(let i=0;i<9;i++) s+=`<i class="${n&&PIPS[n].includes(i)?'on':''}"></i>`; return s+'</div>'; }
+const lobby=()=>online()&&NET.status==='waiting';
 function render(){
-  const S=G.S, sc=scores(), tot=S.W*S.H, terr=S.scoring!=='placed';
-  $('nm1').textContent=S.n1; $('nm2').textContent=S.n2;
-  $('sc1').textContent=sc.t1; $('sc2').textContent=sc.t2;
-  const brk=(p,sq,ctl)=>sc.power?`Squares ${sq}${terr?` (${p}+${ctl})`:''}`:(terr?`Placed ${p} · Controlled ${ctl}`:`Placed ${p}`);
-  $('br1').textContent=brk(sc.p1,sc.sq1,sc.s1); $('br2').textContent=brk(sc.p2,sc.sq2,sc.s2);
-  if(sc.power){ $('sc1').innerHTML=`<span class="gem">◆</span> ${sc.g1}`; $('sc2').innerHTML=`<span class="gem">◆</span> ${sc.g2}`; }
-  $('br1').hidden=$('br2').hidden=!showBreak;
-  $('pl1').setAttribute('aria-expanded',String(showBreak)); $('pl2').setAttribute('aria-expanded',String(showBreak));
-  $('out1').hidden=!G.out[1]; $('out2').hidden=!G.out[2];
-  const hearts=p=>S.noFit==='out'&&!G.out[p]?'♥'.repeat(G.lives[p])+'♡'.repeat(Math.max(0,(S.lives||3)-G.lives[p])):'';
-  $('lv1').textContent=hearts(1); $('lv2').textContent=hearts(2);
-  $('lv1').setAttribute('aria-label',`${G.lives[1]} lives`); $('lv2').setAttribute('aria-label',`${G.lives[2]} lives`);
-  $('pl1').classList.toggle('out',G.out[1]); $('pl2').classList.toggle('out',G.out[2]);
-  $('pl1').classList.toggle('on',!G.over&&G.turn===1); $('pl2').classList.toggle('on',!G.over&&G.turn===2);
+  const S=G.S, sc=scores(), terr=S.scoring!=='placed', P=seats(), many=P.length>2;
+  // score cards, one per seat
+  $('gbar').classList.toggle('many',many); $('cards').style.setProperty('--n',Math.max(P.length,1));
+  for(let q=1;q<=4;q++){
+    const card=$('pl'+q), on=P.includes(q); card.hidden=!on; if(!on) continue;
+    const r=sc.per[q];
+    $('nm'+q).textContent=many&&S.players[q-1].cpu?SEAT_COLORS[q-1]:nameOf(q);   // short label when four cards share the bar
+    if(sc.power) $('sc'+q).innerHTML=`<span class="gem">◆</span>${r.gold}`; else $('sc'+q).textContent=r.total;
+    $('br'+q).textContent=sc.power?`${r.sq} sq`:(terr?(many?`${r.placed}+${r.ctrl}`:`Placed ${r.placed} · Controlled ${r.ctrl}`):`Placed ${r.placed}`);
+    $('br'+q).hidden=!showBreak;
+    $('out'+q).hidden=!G.out[q];
+    const lives=G.lives[q]??(S.lives||3);
+    $('lv'+q).textContent=S.noFit==='out'&&!G.out[q]?'♥'.repeat(lives)+'♡'.repeat(Math.max(0,(S.lives||3)-lives)):'';
+    $('lv'+q).setAttribute('aria-label',`${lives} lives`);
+    card.setAttribute('aria-expanded',String(showBreak));
+    card.classList.toggle('out',!!G.out[q]);
+    card.classList.toggle('on',!G.over&&!lobby()&&G.turn===q);
+    card.classList.toggle('cpu',!!S.players[q-1].cpu);
+  }
   const rLabel=S.endRule==='rounds'?`R${Math.min(G.round,S.rounds)}/${S.rounds}`:`R${G.round}`;
-  $('midinfo').innerHTML=sc.power?`<b>${rLabel}</b><span>${sc.gfree}◆ free</span>`:`<b>${rLabel}</b><span>${sc.disputed} open</span>`;
+  $('midinfo').innerHTML=lobby()?`<b>${P.length}/4</b><span>joined</span>`:sc.power?`<b>${rLabel}</b><span>${sc.gfree}◆ free</span>`:`<b>${rLabel}</b><span>${sc.disputed} open</span>`;
+  // with 3-4 players the score bar needs the room, so the round line moves down here
+  const rWord=S.endRule==='rounds'?`Round ${Math.min(G.round,S.rounds)} of ${S.rounds}`:`Round ${G.round}`;
+  $('roundinfo').textContent=many&&!lobby()?`${rWord} · ${sc.power?`${sc.gfree} gold free`:`${sc.disputed} open`}`:'';
   $('dice').innerHTML=dieHTML(G.dice?.[0])+dieHTML(G.dice?.[1]);
   $('blocksize').textContent=G.dice?`${G.dice[0]}×${G.dice[1]}`:'';
-  const who=nameOf(G.turn), manual=S.diceMode==='manual';
-  const rb=$('rollBtn'); rb.className='cta '+(G.turn===1?'go1':'go2');
+  const who=nameOf(G.turn), manual=S.diceMode==='manual', go='go'+G.turn;
+  const rb=$('rollBtn'); rb.className='cta '+go;
   if(G.dice&&G.noFit){
-    const other=G.turn===1?2:1;
-    rb.textContent=G.out[other]?'Continue':`Continue to ${nameOf(other)}`; rb.hidden=false; rb.disabled=false;
-  } else { rb.textContent=`Roll for ${who}`; rb.hidden=manual; rb.disabled=!!G.dice; }
+    const nx=nextSeat(G.turn);
+    rb.textContent=nx===null||nx===G.turn?'Continue':`Continue to ${nameOf(nx)}`; rb.hidden=false; rb.disabled=false;
+  } else { rb.textContent=who==='You'?'Roll':`Roll for ${who}`; rb.hidden=manual; rb.disabled=!!G.dice; }
   const mine=myTurn();
-  if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=online()&&NET.status==='waiting'?'Waiting for a player':isCpuTurn()?`${who} is playing…`:`${who}'s turn`; }
+  if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=isCpuTurn()?`${who} is playing…`:`${who==='You'?'Your':who+"'s"} turn`; }
+  if(lobby()){
+    rb.hidden=false; rb.className='cta';
+    if(NET.seat===1){ rb.disabled=P.length<2; rb.textContent=P.length<2?'Waiting for players':`Start game · ${P.length} players`; }
+    else { rb.disabled=true; rb.textContent=`Waiting for ${nameOf(1)} to start`; }
+  }
   $('manualRow').hidden=!manual||!!G.dice||!!G.over||!mine;
   $('placeRow').hidden=!G.dice||G.noFit||!!G.over||!mine;
-  $('placeBtn').className=G.turn===1?'go1':'go2';
+  $('placeBtn').className=go;
   if(!$('placeRow').hidden||!$('manualRow').hidden) rb.hidden=true;
   if(G.over){ rb.hidden=false; rb.disabled=false; rb.className='cta'; rb.textContent='See results'; }
   $('placeBtn').disabled=!G.ghost;
   $('rotBtn').disabled=!G.ghost||G.dice[0]===G.dice[1];
   document.querySelectorAll('.pad button').forEach(b=>b.disabled=!G.ghost);
   $('undoBtn').disabled=!G.history.length||isCpuTurn(); $('undoBtn').hidden=online();
-  $('quitBtn').hidden=online()&&!NET.seat;
+  $('quitBtn').hidden=online()&&(!NET.seat||lobby());
   renderNet();
   const m=$('msg');
-  const solo=G.out[G.turn===1?2:1]?` (playing on alone)`:'';
-  if(online()&&!mine&&!G.over){
+  const others=P.filter(q=>q!==G.turn), solo=others.length&&others.every(q=>G.out[q])?` (playing on alone)`:'';
+  if(lobby()){
+    m.textContent=NET.seat===1
+      ?(P.length<2?`Share code ${NET.code}. Up to three players can join.`:`${P.length} of 4 players are here. Start now or wait for more.`)
+      :`You're ${SEAT_COLORS[NET.seat-1]}. ${P.length} of 4 players are here.`;
+    G.lastMsg=''; G.msgCls='';
+  } else if(online()&&!mine&&!G.over){
     const note=G.note?G.note+' ':'';
-    m.textContent=NET.status==='waiting'?`Share code ${NET.code} with the other player. The game starts when they join.`
-      : NET.seat?`${note}Waiting for ${who}${G.dice?` to place a ${G.dice[0]}×${G.dice[1]}`:' to roll'}…`
-      : `Watching. ${note}`;
+    m.textContent=NET.seat?`${note}Waiting for ${who}${G.dice?` to place a ${G.dice[0]}×${G.dice[1]}`:' to roll'}…`:`Watching. ${note}`;
     G.lastMsg=''; G.msgCls='';
   } else if(online()&&!G.lastMsg&&!G.dice&&!G.over){
     m.textContent=`${G.note?G.note+' ':''}Your turn. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`;
-  } else
-  m.textContent=G.lastMsg||(isCpuTurn()?(G.note?G.note+' ':'')+`${who} is taking its turn…`:'')||(G.dice?'':`${who}'s turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
+  } else {
+    const whose=who==='You'?'Your':`${who}'s`, lead=G.note&&!G.blocks.length?G.note+' ':'';
+    m.textContent=G.lastMsg||(isCpuTurn()?(G.note?G.note+' ':'')+`${who} is taking its turn…`:'')||(G.dice?'':`${lead}${whose} turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
+  }
   m.className='msg '+(G.msgCls||'');
   $('overSheet').hidden=!G.over||overHidden;
   $('rematch').hidden=online()&&!NET.seat;
   $('leaveLabel').textContent=online()?'Leave game':'Back to home';
-  if(G.over){
-    if(sc.power){
-      const tie=sc.g1===sc.g2, tb=tie&&sc.sq1!==sc.sq2;
-      const win=tie?(tb?(sc.sq1>sc.sq2?1:2):0):(sc.g1>sc.g2?1:2);
-      $('winner').textContent=win?`${nameOf(win)} wins, ${Math.max(sc.g1,sc.g2)} gold to ${Math.min(sc.g1,sc.g2)}`:`It's a tie, ${sc.g1} gold each`;
-      $('winner').className=win?'w'+win:'';
-      $('overwhy').textContent=G.over.why+(tb?' Gold was level, so total squares decided it.':'')+(sc.gfree?` ${sc.gfree} golden square${sc.gfree>1?'s were':' was'} never captured.`:'');
-      $('overhead').innerHTML='<th></th><th>Gold</th><th>Squares</th>';
-      $('overtable').innerHTML=[[S.n1,sc.g1,sc.sq1],[S.n2,sc.g2,sc.sq2]].map(r=>`<tr><td>${esc(r[0])}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
-    } else {
-      const w=sc.t1===sc.t2?"It's a tie":`${sc.t1>sc.t2?S.n1:S.n2} wins`;
-      $('winner').textContent=`${w}, ${Math.max(sc.t1,sc.t2)} to ${Math.min(sc.t1,sc.t2)}`;
-      $('winner').className=sc.t1===sc.t2?'':(sc.t1>sc.t2?'w1':'w2');
-      $('overwhy').textContent=G.over.why+(sc.disputed?` ${sc.disputed} disputed square${sc.disputed>1?'s':''} count for nobody.`:'');
-      $('overhead').innerHTML='<th></th><th>Placed</th><th>Controlled</th><th>Total</th>';
-      $('overtable').innerHTML=[[S.n1,sc.p1,sc.s1,sc.t1],[S.n2,sc.p2,sc.s2,sc.t2]].map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${terr?r[2]:'—'}</td><td><b>${r[3]}</b></td></tr>`).join('');
-    }
-  }
+  if(G.over) renderResults(sc);
   draw();
   G.lastMsg=''; G.msgCls='';
   maybeCpu();
 }
+function renderResults(sc){
+  const S=G.S, terr=S.scoring!=='placed', st=standings(sc), top=st[0], P=seats();
+  const tied=st.filter(r=>r.total===top.total&&(!sc.power||r.sq===top.sq));
+  const label=q=>esc(nameOf(q))+(S.players[q-1].cpu?` <span class="lvl">${LEVEL_NAMES[S.players[q-1].cpu]}</span>`:'');
+  const unit=sc.power?' gold':'';
+  let title, cls='';
+  if(tied.length>1) title=`It's a tie between ${tied.map(r=>nameOf(r.q)).join(' and ')}, ${top.total}${unit} each`;
+  else { cls='w'+top.q; title=P.length===2?`${nameOf(top.q)} wins, ${top.total}${unit} to ${st[1].total}`:`${nameOf(top.q)} wins with ${top.total}${unit}`; }
+  $('winner').textContent=title; $('winner').className=cls;
+  const goldTie=sc.power&&tied.length===1&&st[1]&&st[1].total===top.total;
+  $('overwhy').textContent=G.over.why+(goldTie?' Gold was level, so total squares decided it.':'')
+    +(sc.power?(sc.gfree?` ${sc.gfree} golden square${sc.gfree>1?'s were':' was'} never captured.`:'')
+              :(sc.disputed?` ${sc.disputed} disputed square${sc.disputed>1?'s':''} count for nobody.`:''));
+  const dot=q=>`<span class="dotc d${q}"></span>`;
+  if(sc.power){
+    $('overhead').innerHTML='<th></th><th>Gold</th><th>Squares</th>';
+    $('overtable').innerHTML=st.map(r=>`<tr><td>${dot(r.q)}${label(r.q)}</td><td><b>${r.gold}</b></td><td>${r.sq}</td></tr>`).join('');
+  } else {
+    $('overhead').innerHTML='<th></th><th>Placed</th><th>Sealed</th><th>Total</th>';
+    $('overtable').innerHTML=st.map(r=>`<tr><td>${dot(r.q)}${label(r.q)}</td><td>${r.placed}</td><td>${terr?r.ctrl:'—'}</td><td><b>${r.total}</b></td></tr>`).join('');
+  }
+}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-$('pl1').onclick=$('pl2').onclick=()=>{ showBreak=!showBreak; render(); };
-$('rollBtn').onclick=()=>{ if(G&&G.over){ overHidden=false; render(); return; } roll(); };
+[1,2,3,4].forEach(q=>$('pl'+q).onclick=()=>{ showBreak=!showBreak; render(); });
+$('rollBtn').onclick=()=>{ if(G&&G.over){ overHidden=false; render(); return; } if(lobby()){ hostStart(); return; } roll(); };
 $('useRoll').onclick=()=>{ if(G.dice||G.over||!myTurn()) return; snapshot(); applyRoll(+$('m1').value,+$('m2').value); commit(); render(); };
 $('placeBtn').onclick=place; $('rotBtn').onclick=rotate; $('sugBtn').onclick=suggest; $('undoBtn').onclick=()=>{ closeSheets(); undo(); };
 document.querySelectorAll('.pad button[data-dx]').forEach(b=>b.onclick=()=>nudge(+b.dataset.dx,+b.dataset.dy));
@@ -1192,7 +1315,9 @@ $('quitBtn').onclick=()=>{$('quitConfirm').hidden=false;};
 $('quitNo').onclick=()=>{$('quitConfirm').hidden=true;};
 $('quitYes').onclick=()=>{$('quitConfirm').hidden=true; closeSheets(); if(online()&&!NET.seat) return; cancelCpu(); G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; overHidden=false; commit(); render();};
 $('quitSetup').onclick=()=>{$('quitConfirm').hidden=true; leaveOnline(true); showHome();};  // online: keep it so Rejoin works
-$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; cancelCpu(); G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; overHidden=false; fitView(); commit(); render(); };
+$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; cancelCpu();
+  const P=seatsOf(G.S), next=P[(P.indexOf(G.first||1)+1)%P.length];   // the next player goes first this time
+  G=newGame(G.S,next); G.note=`Rematch: ${nameOf(next)} goes first.`; regionCache=null; V=null; overHidden=false; fitView(); commit(); render(); };
 $('newSetup').onclick=()=>{ leaveOnline(); showHome(); };
 $('seeBoard').onclick=()=>{ overHidden=true; render(); };
 let overHidden=false;
@@ -1223,10 +1348,10 @@ function placeServer(slot){ $(slot).appendChild($('serverWrap')); }
 function openSetup(mode){
   playMode=mode; prefillSettings();
   $('setupTitle').textContent=mode==='host'?'Host online':mode==='cpu'?'Play the computer':'Pass & play';
-  $('setupLede').textContent=mode==='host'?'You play from the top-left corner. Share the code once the game is created.'
-    :mode==='cpu'?'You play from the top-left corner and go first. The computer plays from the bottom-right.'
-    :'Two players, one phone. Pass it across after each turn.';
-  syncAiHint();
+  $('setupLede').textContent=mode==='host'?"You're Blue, in the top-left corner. Create the game, share the code, and start once others have joined."
+    :mode==='cpu'?"You're Blue, in the top-left corner, and go first. Add up to three computers."
+    :'Two to four players on one phone. Pass it along after each turn.';
+  renderSeats();
   $('start').textContent=mode==='host'?'Create game':'Start game';
   showErr('hostErr',''); placeServer('serverSlotHost'); showScreen('setup'); syncPlayModes();
   $('setup').querySelector('.scroll').scrollTop=0;
@@ -1234,7 +1359,13 @@ function openSetup(mode){
 function openJoin(){ playMode='join'; showErr('joinErr',''); placeServer('serverSlotJoin'); showScreen('joinScreen'); syncPlayModes(); }
 function prefillSettings(){
   const src=G||load();
-  if(src&&src.S){ const S=src.S; $('n1').value=S.n1; if(S.vs!=='cpu') $('n2').value=S.n2; if(S.ai) $('ai').value=S.ai; gw.value=S.W; gh.value=S.H;
+  if(src&&src.S){ const S=src.S; gw.value=S.W; gh.value=S.H;
+    const pl=S.players||[];
+    if(pl.length>=2&&!online()){
+      if(pl.some(p=>p.cpu)){ if(playMode==='cpu') seatModel.cpu=pl.map((p,i)=>p.cpu?{cpu:p.cpu}:{n:i===0?p.n:'You'}); }
+      else if(playMode==='local') seatModel.local=pl.map(p=>({n:p.n}));
+    }
+    if(pl[0]&&!pl[0].cpu&&playMode==='host') seatModel.host=[{n:pl[0].n}];
     const p=`${S.W}x${S.H}`; preset.value=[...preset.options].some(o=>o.value===p)?p:'custom';
     $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('golds').value=S.golds||7;
     $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; }
@@ -1243,9 +1374,14 @@ function prefillSettings(){
 
 /* ---------- boot ---------- */
 function migrate(g){
+  if(!g.S.players){   // saves from the two-player version
+    g.S.players=[{n:g.S.n1||'Player 1'},g.S.vs==='cpu'?{n:'Red CPU',cpu:g.S.ai||'medium'}:{n:g.S.n2||'Player 2'}];
+    if(g.S.vs==='cpu'){ g.S.players[1].n=`${LEVEL_NAMES[g.S.ai||'medium']} CPU`; }
+  }
   g.history=g.history||[]; g.S.noFit=g.S.noFit||'out'; if(g.ghost&&!Number.isFinite(g.ghost.x+g.ghost.y)) g.ghost=null; g.S.lives=g.S.lives||3;
-  g.cpuPlan=false; if(g.S.vs==='cpu'&&g.turn===2) g.ghost=null;
-  g.ctrl=g.ctrl||new Array(g.cells.length).fill(0); g.lives=g.lives||{1:g.S.lives,2:g.S.lives}; g.out=g.out||{1:false,2:false};
+  g.cpuPlan=false; if(g.S.players[g.turn-1]?.cpu) g.ghost=null;
+  g.ctrl=g.ctrl||new Array(g.cells.length).fill(0); g.lives=g.lives||{}; g.out=g.out||{};
+  g.S.players.forEach((_,i)=>{ const q=i+1; if(g.lives[q]==null) g.lives[q]=g.S.lives; if(g.out[q]==null) g.out[q]=false; });
   return g;
 }
 function start(data){
@@ -1331,22 +1467,20 @@ function syncPlayModes(){
   const srv=NET.kind==='server';
   $('pmHost').disabled=$('pmJoin').disabled=!NET.checked;
   $('serverWrap').hidden=!(srv&&!NET.sameOrigin&&(playMode==='host'||playMode==='join'));
-  $('n2Wrap').hidden=playMode==='host'||playMode==='cpu';
-  $('aiWrap').hidden=$('aiHint').hidden=playMode!=='cpu';
-  if(playMode==='host'&&!srv) $('setupLede').textContent='You play from the top-left corner. The other player needs this page shared with them as an Editor.';
+  if(playMode==='host'&&!srv) $('setupLede').textContent="You're Blue, in the top-left corner. Everyone who joins needs this page shared with them as an Editor.";
   const saved=savedNet();
   $('rejoin').hidden=!(NET.checked&&saved&&saved.code&&saved.kind===NET.kind)||online();
   if(saved) $('rejoinTitle').textContent=`Rejoin game ${saved.code}`;
   const lg=load(), canResume=!!(lg&&lg.S&&!lg.over);
   $('resume').hidden=!canResume;
-  if(canResume) $('resumeInfo').textContent=`${lg.S.n1} vs ${lg.S.n2} · Round ${lg.round||1}${lg.S.mode==='power'?' · Power Squares':''}`;
+  if(canResume){ const pl=lg.S.players||[{n:lg.S.n1},{n:lg.S.n2}]; $('resumeInfo').textContent=`${pl.map(p=>p.n).join(' vs ')} · Round ${lg.round||1}${lg.S.mode==='power'?' · Power Squares':''}`; }
 }
 $('pmLocal').onclick=()=>openSetup('local');
 $('pmCpu').onclick=()=>openSetup('cpu');
 $('pmHost').onclick=()=>openSetup('host');
 $('pmJoin').onclick=()=>{ openJoin(); setTimeout(()=>$('joinCode').focus(),50); };
 $('joinCode').oninput=e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4); };
-$('joinBtn').onclick=()=>joinGame($('joinCode').value, $('joinName').value.trim()||'Player 2');
+$('joinBtn').onclick=()=>joinGame($('joinCode').value, $('joinName').value.trim());
 $('rejoin').onclick=()=>{ const s=savedNet(); if(s) connect(s); };
 $('copyCode').onclick=async()=>{ try{ await navigator.clipboard.writeText(NET.code); $('copyCode').textContent='Copied'; setTimeout(()=>$('copyCode').textContent='Copy',1500); }catch(e){ const r=document.createRange(); r.selectNodeContents($('netCode')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
 $('testServer').onclick=async()=>{
@@ -1361,7 +1495,8 @@ async function hostGame(){
   if(NET.kind==='server'&&!useServerField()) return showErr('hostErr','Enter your game server address first.');
   $('start').disabled=true;
   try{
-    const S=readSettings(); const st=newGame(S); st.note=`${S.n1} is hosting.`;
+    const S=readSettings(); S.players=S.players.slice(0,1); S.vs='human';
+    const st=newGame(S); st.note=`${nameOf2(S,1)} is hosting.`;
     if(NET.kind==='server'){
       NET.token=null;
       const j=await api('/api/games',{method:'POST',body:{state:packState(st)}});
@@ -1379,6 +1514,7 @@ async function hostGame(){
   }
   finally{ $('start').disabled=false; }
 }
+const nameOf2=(S,q)=>S.players[q-1]?.n||`Player ${q}`;
 async function joinGame(code,name){
   code=(code||'').toUpperCase(); if(code.length!==4) return showErr('joinErr','Codes are 4 characters, like K7QM.');
   if(NET.kind==='server'&&!useServerField()) return showErr('joinErr','Enter your game server address first.');
@@ -1393,11 +1529,14 @@ async function joinGame(code,name){
       const ref=NET.db.doc('games/'+code); const snap=await ref.get();
       if(!snap.exists){ showErr('joinErr',`No game found with code ${code}. Check it with the host.`); return; }
       const d=snap.data(), seats=d.seats||{}, me=await myId();
-      let seat=seats['1']===me?1:seats['2']===me?2:0;
-      if(!seat&&!seats['2']){
-        const st=JSON.parse(d.state); st.S.n2=name; st.note=`${name} joined. ${st.S.n1} rolls first.`;
-        await ref.update({seats:{'2':me}, status:'playing', state:JSON.stringify(st), rev:(d.rev||0)+1});
-        seat=2;
+      let seat=+(Object.keys(seats).find(k=>seats[k]===me)||0);
+      const taken=Object.keys(seats).length;
+      if(!seat&&d.status==='waiting'&&taken<4){
+        seat=taken+1;
+        const st=JSON.parse(d.state), nm=name||`Player ${seat}`;
+        st.S.players=st.S.players||[]; st.S.players[seat-1]={n:nm};
+        st.note=`${nm} joined as ${SEAT_COLORS[seat-1]}.`;
+        await ref.update({seats:{[String(seat)]:me}, state:JSON.stringify(st), rev:(d.rev||0)+1});
       }
       connect({kind:'claude',code,seat});
     }
@@ -1406,6 +1545,14 @@ async function joinGame(code,name){
       : e&&e.code==='invalid_argument'?"You can't join games on this page yet. Ask its owner to share it with you as an Editor.":"Couldn't join. Check your connection and try again.");
   }
   finally{ $('joinBtn').disabled=false; }
+}
+// Host taps Start: deal a fresh game for everyone who joined.
+function hostStart(){
+  if(!lobby()||NET.seat!==1||G.S.players.length<2) return;
+  const S={...G.S, players:G.S.players.slice(0,4)};
+  G=newGame(S,1); G.note=`Game on: ${S.players.length} players. ${nameOf(1)} rolls first.`;
+  NET.status='playing'; regionCache=null; V=null; fitView();
+  commit(); render();
 }
 function connect(c){
   stopNet();
@@ -1416,7 +1563,7 @@ function connect(c){
     NET.base=c.base||NET.base; NET.token=c.token||null; NET.polling=true; poll();
   } else {
     NET.ref=NET.db.doc('games/'+c.code);
-    NET.unsub=NET.ref.onSnapshot(onRemote, ()=>{ if(online()&&G){ G.lastMsg='Lost the connection to the game. Use Rejoin from the setup screen.'; G.msgCls='bad'; render(); } });
+    NET.unsub=NET.ref.onSnapshot(onRemote, ()=>{ if(online()&&G){ G.lastMsg='Lost the connection to the game. Use Rejoin from the home screen.'; G.msgCls='bad'; render(); } });
   }
 }
 // Server mode: ask for anything newer than our revision every 1.5 s (slower when hidden).
@@ -1440,6 +1587,7 @@ function onRemote(snap){
   if(!snap.exists){ const first=!NET.first; leaveOnline(true); if(first){ openJoin(); showErr('joinErr','That game no longer exists.'); } else { showHome(); } return; }
   const d=snap.data(); const rev=d.rev||0;
   if(NET.first&&rev<=NET.rev) return;          // our own write echoing back, or an older copy
+  const wasLobby=NET.status==='waiting';
   NET.rev=rev; NET.status=d.status;
   let st; try{ st=JSON.parse(d.state); }catch(e){ return; }
   const prevDice=G&&G.dice;
@@ -1449,7 +1597,7 @@ function onRemote(snap){
   if(!st.dice) G.dice=null;
   regionCache=null;
   if(!NET.first){ NET.first=true; V=null; showGame(); }
-  else { render(); if(!prevDice&&G.dice) shakeDice(); }
+  else { if(wasLobby&&NET.status!=='waiting'){ V=null; fitView(); } render(); if(!prevDice&&G.dice) shakeDice(); }
 }
 function commit(){
   save();
@@ -1466,7 +1614,7 @@ function commit(){
         else fail(e.code==='network'?"Your move didn't reach the server. Check your connection.":e.message);
       });
   } else {
-    NET.q=NET.q.then(()=>NET.ref.update({...body,rev:NET.rev})).catch(()=>fail("Your move didn't reach the other phone. Check your connection."));
+    NET.q=NET.q.then(()=>NET.ref.update({...body,rev:NET.rev})).catch(()=>fail("Your move didn't reach the other players. Check your connection."));
   }
 }
 function stopNet(){
@@ -1483,7 +1631,7 @@ function renderNet(){
   const on=online(); $('netBar').hidden=!on; if(!on) return;
   $('netCode').textContent=NET.code;
   $('netDot').className='dot'+(NET.status==='waiting'?' wait':'');
-  $('netWho').textContent=NET.status==='waiting'?'Waiting for Player 2 to join':NET.seat?`You are ${nameOf(NET.seat)}`:'Watching';
+  $('netWho').innerHTML=NET.seat?`<span class="dotc d${NET.seat}"></span>You are ${esc(nameOf(NET.seat))}`:'Watching';
 }
 function shakeDice(){ const d=$('dice'); d.classList.remove('roll-anim'); void d.offsetWidth; d.classList.add('roll-anim'); }
 

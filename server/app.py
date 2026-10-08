@@ -1,12 +1,14 @@
 """Block Claim game server.
 
 A tiny turn-based relay: each online game is one row holding the whole game state
-(an opaque JSON string the client builds), a revision number, and two seat tokens.
+(a JSON string the client builds), a revision number, and a private token per seat.
+Up to four seats: the host is seat 1 (Blue); joiners take 2 (Red), 3 (Yellow), 4 (Green)
+while the game is waiting, then the host starts it.
 
-  POST /api/games                 create a game        -> {code, seat: 1, token, rev}
-  POST /api/games/<code>/join     take seat 2 / rejoin -> {seat, token}
+  POST /api/games                 create a game (waiting)     -> {code, seat: 1, token, rev}
+  POST /api/games/<code>/join     take the next seat / rejoin -> {seat, token}   (seat 0 = watching)
   GET  /api/games/<code>?since=N  latest state if rev > N, else 204
-  POST /api/games/<code>/move     save a move          -> {rev}   (409 if out of date)
+  POST /api/games/<code>/move     save a move or start        -> {rev}   (409 if out of date)
   GET  /                          the game page itself
 """
 import json
@@ -23,6 +25,8 @@ DB_PATH = os.path.join(DATA_DIR, "games.db")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 MAX_STATE_BYTES = 400_000
+MAX_SEATS = 4
+SEAT_COLORS = ["Blue", "Red", "Yellow", "Green"]
 KEEP_DAYS = float(os.environ.get("KEEP_DAYS", "30"))
 STATUSES = ("waiting", "playing", "over")
 
@@ -44,6 +48,9 @@ def init_db():
             updated REAL NOT NULL
         )"""
     )
+    cols = {r[1] for r in con.execute("PRAGMA table_info(games)")}
+    if "tokens" not in cols:  # added for 3-4 player games
+        con.execute("ALTER TABLE games ADD COLUMN tokens TEXT")
     con.commit()
     con.close()
 
@@ -105,24 +112,31 @@ def valid_state(state):
     return parsed if isinstance(parsed, dict) else None
 
 
+def tokens_of(row):
+    """Seat tokens in seat order (older rows kept them in token1/token2)."""
+    if row["tokens"]:
+        return json.loads(row["tokens"])
+    return [t for t in (row["token1"], row["token2"]) if t]
+
+
 def seat_for(row, token):
     if not token:
         return 0
-    if row["token1"] and secrets.compare_digest(str(token), row["token1"]):
-        return 1
-    if row["token2"] and secrets.compare_digest(str(token), row["token2"]):
-        return 2
+    for i, t in enumerate(tokens_of(row)):
+        if t and secrets.compare_digest(str(token), t):
+            return i + 1
     return 0
 
 
 def view(row, seat):
+    toks = tokens_of(row)
     return {
         "code": row["code"],
         "rev": row["rev"],
         "status": row["status"],
         "state": row["state"],
         "seat": seat,
-        "seats": {"1": bool(row["token1"]), "2": bool(row["token2"])},
+        "seats": {str(i + 1): bool(i < len(toks)) for i in range(MAX_SEATS)},
     }
 
 
@@ -149,9 +163,9 @@ def create_game():
         code = "".join(secrets.choice(CODE_CHARS) for _ in range(4))
         try:
             con.execute(
-                "INSERT INTO games (code, state, rev, status, token1, token2, created, updated)"
-                " VALUES (?, ?, 1, 'waiting', ?, NULL, ?, ?)",
-                (code, state, token, now, now),
+                "INSERT INTO games (code, state, rev, status, token1, token2, tokens, created, updated)"
+                " VALUES (?, ?, 1, 'waiting', ?, NULL, ?, ?, ?)",
+                (code, state, token, json.dumps([token]), now, now),
             )
             return jsonify(code=code, seat=1, token=token, rev=1), 201
         except sqlite3.IntegrityError:
@@ -165,7 +179,6 @@ def join_game(code):
     if not code:
         return error("Game codes are 4 characters, like K7QM.")
     data = body()
-    name = str(data.get("name") or "Player 2").strip()[:18] or "Player 2"
     con = db()
     con.execute("BEGIN IMMEDIATE")
     try:
@@ -177,21 +190,26 @@ def join_game(code):
         if seat:  # rejoining with a saved token
             con.execute("COMMIT")
             return jsonify(seat=seat, token=data.get("token"))
-        if row["token2"]:  # both seats taken: watch only
+        toks = tokens_of(row)
+        if row["status"] != "waiting" or len(toks) >= MAX_SEATS:  # started or full: watch only
             con.execute("COMMIT")
             return jsonify(seat=0, token=None)
+        seat = len(toks) + 1
+        name = str(data.get("name") or "").strip()[:18] or f"Player {seat}"
         state = json.loads(row["state"])
         settings = state.setdefault("S", {})
-        settings["n2"] = name
-        state["note"] = f"{name} joined. {settings.get('n1', 'Player 1')} rolls first."
+        players = settings.setdefault("players", [{"n": settings.get("n1", "Player 1")}])
+        del players[seat - 1:]
+        players.append({"n": name})
+        state["note"] = f"{name} joined as {SEAT_COLORS[seat - 1]}."
         token = secrets.token_urlsafe(18)
+        toks.append(token)
         con.execute(
-            "UPDATE games SET state = ?, token2 = ?, status = 'playing', rev = rev + 1, updated = ?"
-            " WHERE code = ?",
-            (json.dumps(state, separators=(",", ":")), token, time.time(), code),
+            "UPDATE games SET state = ?, tokens = ?, rev = rev + 1, updated = ? WHERE code = ?",
+            (json.dumps(state, separators=(",", ":")), json.dumps(toks), time.time(), code),
         )
         con.execute("COMMIT")
-        return jsonify(seat=2, token=token)
+        return jsonify(seat=seat, token=token)
     except Exception:
         con.execute("ROLLBACK")
         raise
@@ -239,13 +257,18 @@ def move(code):
         seat = seat_for(row, data.get("token"))
         if not seat:
             con.execute("ROLLBACK")
-            return error("Only the two players can make moves.", 403)
+            return error("Only players in this game can make moves.", 403)
         if row["rev"] != base:
             con.execute("ROLLBACK")
             return error("The game moved on. Reloading the latest board.", 409, game=view(row, seat))
         if row["status"] == "waiting":
-            con.execute("ROLLBACK")
-            return error("Waiting for a second player to join.", 409, game=view(row, seat))
+            # Only the host can act in the lobby: start the game (or call it off).
+            if seat != 1 or status == "waiting":
+                con.execute("ROLLBACK")
+                return error("Waiting for the host to start the game.", 409, game=view(row, seat))
+            if status == "playing" and len(tokens_of(row)) < 2:
+                con.execute("ROLLBACK")
+                return error("Waiting for at least one more player to join.", 409, game=view(row, seat))
         current = json.loads(row["state"])
         # During play only the player whose turn it is may move; either player may end the game
         # early, and either may start a rematch once it is over.

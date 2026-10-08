@@ -1,7 +1,8 @@
 # Block Claim
 
-A two-player dice-and-blocks territory game: an offline Android app, plus a small game
-server you can run on your own NAS for online play.
+A dice-and-blocks territory game for 2 to 4 players (Blue, Red, Yellow, Green), with
+computer opponents: an offline Android app, plus a small game server you can run on your
+own NAS for online play.
 
 ## Android app
 
@@ -34,7 +35,7 @@ Check it's running: open `http://<NAS-IP>:8787/api/health` — you should see `"
 
 ### Play online
 
-- **In a browser:** open `http://<NAS-IP>:8787` on each phone. Host on one, Join with the code on the other.
+- **In a browser:** open `http://<NAS-IP>:8787` on each phone. Host on one; up to three others Join with the code (Red, then Yellow, then Green), and the host taps Start.
 - **In the Android app:** pick Host online or Join online, enter `<NAS-IP>:8787` as the game server, and tap Test connection.
 
 Both phones must be able to reach the NAS: on the same Wi-Fi, or anywhere through
@@ -58,16 +59,16 @@ Games untouched for 30 days are deleted (change `KEEP_DAYS` in `docker-compose.y
 ### How it works
 
 Each game is one row: the whole game state as JSON, a revision number, and a private token
-for each seat. Phones check for a newer revision every 1.5 seconds. The server only accepts
+for each of up to four seats. Phones check for a newer revision every 1.5 seconds. The server only accepts
 a move from the player whose turn it is, based on the latest revision, so moves can't
 cross or be forged by someone who only knows the code.
 
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/games` | create a game, get the code and seat 1's token |
-| `POST /api/games/<code>/join` | take seat 2 (or rejoin with your token) |
+| `POST /api/games/<code>/join` | take the next seat while the lobby is open (or rejoin with your token) |
 | `GET /api/games/<code>?since=<rev>` | latest state if newer, else `204` |
-| `POST /api/games/<code>/move` | save a move (`409` if the game moved on) |
+| `POST /api/games/<code>/move` | save a move, or the host starts the game (`409` if the game moved on) |
 
 ## Editing the game
 
@@ -85,3 +86,12 @@ Push to `main` and GitHub rebuilds the APK and re-checks the server image. Run
 `app/blockclaim.keystore` is a fixed signing key kept in the repo so every build can update
 the last one. Fine for a personal sideloaded app; make a new private key if you ever publish
 to the Play Store.
+
+## Computer players
+
+`tools/ai-bench/sim.js` plays computer levels against each other headlessly, rotating seats:
+
+```sh
+node tools/ai-bench/sim.js 40 25 25 hard,medium
+node tools/ai-bench/sim.js 24 25 25 hard,medium,medium,medium
+```
