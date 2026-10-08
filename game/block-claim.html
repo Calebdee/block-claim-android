@@ -222,6 +222,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span class="tx"><span class="tt">Pass &amp; play</span><span class="ts">One phone, two players. Works offline.</span></span>
       <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </button>
+    <button class="tile" id="pmCpu">
+      <span class="ic k0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 7V4M9 12h.01M15 12h.01M9.5 15.5h5"/></svg></span>
+      <span class="tx"><span class="tt">Play the computer</span><span class="ts">Easy, medium or hard. Works offline.</span></span>
+      <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
     <button class="tile" id="pmHost">
       <span class="ic k2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
       <span class="tx"><span class="tt">Host online</span><span class="ts">Start a game and share a 4-letter code.</span></span>
@@ -248,6 +253,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <h3 class="gh">Players</h3>
     <div class="group">
       <label class="lrow" for="n1"><span class="dotc d1"></span><span class="lk">Player 1</span><input id="n1" value="Player 1" maxlength="18" autocomplete="off"></label>
+      <label class="lrow" for="ai" id="aiWrap" hidden><span class="dotc d2"></span><span class="lk">Computer</span><span class="sel"><select id="ai">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select></span></label>
+      <p class="rowhint" id="aiHint" hidden></p>
       <label class="lrow" for="n2" id="n2Wrap"><span class="dotc d2"></span><span class="lk">Player 2</span><input id="n2" value="Player 2" maxlength="18" autocomplete="off"></label>
     </div>
     <h3 class="gh">Game</h3>
@@ -432,6 +443,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <li><b>Sealed space.</b> Empty space only you can reach fills in with your colour and counts as yours.</li>
       <li><b>End.</b> When no space is left that both players can reach, or both are out. Most squares wins.</li>
       <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it.</li>
+      <li><b>Computer.</b> Easy plays loosely. Medium races you for space nearby. Hard reads the whole board, walls you in, and squeezes the room you need for your next roll.</li>
       <li><b>Online.</b> Host shares a 4-letter code; the other player joins with it. Each phone moves on its own turn.</li>
     </ol>
     <button class="ghost" data-close style="min-height:50px">Got it</button>
@@ -457,10 +469,18 @@ $('mode').onchange=syncRuleFields;
 $('endRule').onchange=syncRuleFields; $('noFit').onchange=syncRuleFields;
 for(const s of [$('m1'),$('m2')]) for(let i=1;i<=6;i++){const o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}
 
+const AI_NAMES={easy:'Easy CPU',medium:'Medium CPU',hard:'Hard CPU'};
+const AI_HINTS={easy:'Plays loosely and grabs what it can see. Good for learning the game.',
+  medium:'Races you for the space near its edge and seals off pockets. Sometimes settles for a decent move.',
+  hard:'Reads the whole board, walls you in, keeps room for its next roll and squeezes yours. Thinks two moves ahead.'};
+function syncAiHint(){ $('aiHint').textContent=AI_HINTS[$('ai').value]; }
+$('ai').onchange=syncAiHint;
 function readSettings(){
   const clamp=(v,a,b,d)=>{v=parseInt(v,10);return isNaN(v)?d:Math.max(a,Math.min(b,v));};
   return {
-    n1:($('n1').value.trim()||'Player 1'), n2:($('n2').value.trim()||'Player 2'),
+    n1:($('n1').value.trim()||'Player 1'),
+    n2:playMode==='cpu'?AI_NAMES[$('ai').value]:($('n2').value.trim()||'Player 2'),
+    vs:playMode==='cpu'?'cpu':'human', ai:$('ai').value,
     W:clamp(gw.value,8,120,25), H:clamp(gh.value,8,160,25),
     mode:$('mode').value, golds:clamp($('golds').value,1,60,7),
     endRule:$('endRule').value, rounds:clamp($('rounds').value,1,500,20), target:clamp($('target').value,5,95,50),
@@ -507,7 +527,7 @@ function genGold(W,H,n){
   while(out.size<n){ const k=Math.floor(Math.random()*W*H), m=W*H-1-k; if(k!==m&&!out.has(k)&&!out.has(m)){out.add(k);out.add(m);} }
   return [...out].slice(0,n);
 }
-$('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } G=newGame(readSettings()); V=null; showGame(); };
+$('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } cancelCpu(); G=newGame(readSettings()); V=null; showGame(); };
 $('resume').onclick=()=>{ const g=load(); if(g) G=migrate(g); showGame(); };
 
 /* ---------- persistence ---------- */
@@ -598,6 +618,198 @@ function checkEnd(){
   if(sc.p1+sc.p2===total) return 'The paper is full.';
   if(S.noFit==='pass'&&S.stall>0 && G.passes>=S.stall) return `${S.stall} passes in a row with no block placed.`;
   return null;
+}
+
+/* ---------- computer opponent (BEGIN-AI) ----------
+   Pure functions: they read a board snapshot and never touch the page or G.
+   ctx = {W, H, cells, gold, scoring, noFit, lives:{1,2}}
+
+   How each level thinks:
+   - easy:   half its moves are random; otherwise grabs whatever seals space or gold right now.
+   - medium: plays the territory race, but short-sighted: for empty squares within a few steps
+             of the front it asks who gets there first, and moves to win more of them. It also
+             settles for a decent move now and then.
+   - hard:   plays the race across the whole board, keeps room for its own next roll and squeezes
+             yours (fewer places for your next block, harder when you're on your last life), and
+             searches two moves deep: for its best options it imagines your strongest reply to a
+             spread of rolls and picks the move that holds up best. Knows golden squares too.
+   Benchmarked: medium beats easy ~93%, hard beats medium ~66% (73% in Power Squares). */
+const CPU_ROLLS=(()=>{ const r=[]; for(let a=1;a<=6;a++) for(let b=a;b<=6;b++) r.push([a,b,(a===b?1:2)/36]); return r; })();
+
+function cpuPrefix(c,W,H,pred){
+  const W1=W+1, P=new Int32Array(W1*(H+1));
+  for(let y=0;y<H;y++){ let row=0;
+    for(let x=0;x<W;x++){ row+=pred(c[y*W+x])?1:0; P[(y+1)*W1+x+1]=P[y*W1+x+1]+row; } }
+  return P;
+}
+function cpuRect(P,W,H,x0,y0,x1,y1){            // sum over [x0,x1) x [y0,y1), clipped to the board
+  if(x0<0)x0=0; if(y0<0)y0=0; if(x1>W)x1=W; if(y1>H)y1=H; if(x0>=x1||y0>=y1) return 0;
+  const W1=W+1; return P[y1*W1+x1]-P[y0*W1+x1]-P[y1*W1+x0]+P[y0*W1+x0];
+}
+// A tool for one board position: can player q put a w×h block at (x,y)?
+function cpuFitter(c,W,H,q){
+  const F=cpuPrefix(c,W,H,v=>v!==0), O=cpuPrefix(c,W,H,v=>v===q);
+  const has=cpuRect(O,W,H,0,0,W,H)>0, cx=q===1?0:W-1, cy=q===1?0:H-1;
+  return (x,y,w,h)=>{
+    if(x<0||y<0||x+w>W||y+h>H) return false;
+    if(cpuRect(F,W,H,x,y,x+w,y+h)) return false;
+    if(!has) return cx>=x&&cx<x+w&&cy>=y&&cy<y+h;
+    return cpuRect(O,W,H,x-1,y,x+w+1,y+h)+cpuRect(O,W,H,x,y-1,x+w,y+h+1)>0;
+  };
+}
+function cpuSpots(c,W,H,q,a,b){
+  const fit=cpuFitter(c,W,H,q), out=[], dims=a===b?[[a,b]]:[[a,b],[b,a]];
+  for(const [w,h] of dims) for(let y=0;y<=H-h;y++) for(let x=0;x<=W-w;x++) if(fit(x,y,w,h)) out.push({x,y,w,h});
+  return out;
+}
+// Chance (0..1) that player q's next roll fits somewhere on board c.
+function cpuFitChance(c,W,H,q){
+  const fit=cpuFitter(c,W,H,q); let p=0;
+  for(const [a,b,pr] of CPU_ROLLS){
+    let ok=false;
+    const dims=a===b?[[a,b]]:[[a,b],[b,a]];
+    for(const [w,h] of dims){ for(let y=0;y<=H-h&&!ok;y++) for(let x=0;x<=W-w;x++) if(fit(x,y,w,h)){ ok=true; break; } if(ok) break; }
+    if(ok) p+=pr;
+  }
+  return p;
+}
+// Territory picture of board c from player p's side.
+function cpuAnalyse(ctx,c,p,race,horizon){
+  const {W,H}=ctx, N=W*H, o=p===1?2:1, gold=ctx.gold;
+  let hasP=false,hasO=false;
+  for(let k=0;k<N;k++){ if(c[k]===p) hasP=true; else if(c[k]===o) hasO=true; }
+  const r={exP:0,exO:0,goldP:0,goldO:0,vorP:0,vorO:0,gVorP:0,gVorO:0};
+  // sealed space: empty areas only one side touches (counted only once both sides are on the board)
+  const reg=new Int32Array(N).fill(-1), owner=[];
+  if(hasP&&hasO){
+    const st=new Int32Array(N);
+    for(let s=0;s<N;s++){
+      if(c[s]||reg[s]>=0) continue;
+      const id=owner.length; let n=0,top=0,tp=false,to=false; st[top++]=s; reg[s]=id;
+      while(top){ const k=st[--top]; n++; const x=k%W;
+        const nb=[x>0?k-1:-1, x<W-1?k+1:-1, k-W, k+W];
+        for(const m of nb){ if(m<0||m>=N) continue; const v=c[m];
+          if(v===p) tp=true; else if(v===o) to=true; else if(!v&&reg[m]<0){ reg[m]=id; st[top++]=m; } } }
+      const ow=tp&&!to?p:to&&!tp?o:0; owner.push(ow);
+      if(ow===p) r.exP+=n; else if(ow===o) r.exO+=n;
+    }
+  }
+  if(gold) for(const k of gold){
+    const v=c[k]; const ow=v||(reg[k]>=0?owner[reg[k]]:0);
+    if(ow===p) r.goldP++; else if(ow===o) r.goldO++;
+  }
+  if(!race) return r;
+  // race: breadth-first from both sides at once; each empty square goes to whoever reaches it first
+  const dist=new Int16Array(N).fill(-1), lab=new Uint8Array(N), q=new Int32Array(N); let qh=0,qt=0;
+  for(let k=0;k<N;k++) if(c[k]){ dist[k]=0; lab[k]=c[k]===p?1:2; q[qt++]=k; }
+  const seed=(who,k)=>{ if(!c[k]&&dist[k]<0){ dist[k]=0; lab[k]=who; q[qt++]=k; } };
+  if(!hasP) seed(1, p===1?0:N-1);
+  if(!hasO) seed(2, o===1?0:N-1);
+  while(qh<qt){ const k=q[qh++], d=dist[k], L=lab[k], x=k%W;
+    const nb=[x>0?k-1:-1, x<W-1?k+1:-1, k-W, k+W];
+    for(const m of nb){ if(m<0||m>=N||c[m]) continue;
+      if(dist[m]<0){ dist[m]=d+1; lab[m]=L; q[qt++]=m; }
+      else if(dist[m]===d+1&&lab[m]!==L) lab[m]=3; } }
+  const hz=horizon||1e9;
+  for(let k=0;k<N;k++){ if(c[k]||dist[k]>hz) continue; if(lab[k]===1) r.vorP++; else if(lab[k]===2) r.vorO++; }
+  if(gold) for(const k of gold){ if(c[k]) continue; if(lab[k]===1) r.gVorP++; else if(lab[k]===2) r.gVorO++; }
+  return r;
+}
+const CPU_LEVELS={
+  easy:  {random:0.5, race:0,    gRace:0,  noise:10},
+  medium:{random:0,   race:0.55, gRace:8,  noise:4, slip:0.15, horizon:4},
+  hard:  {random:0,   race:1,    gRace:14, noise:0.3, search:true, look:true},
+};
+// Rolls the hard computer imagines you getting next: a spread of small to large blocks.
+const CPU_REPLY_ROLLS=[[1,3],[2,3],[2,5],[3,4],[4,5],[5,6]];
+function cpuScore(ctx,before,a,cfg,p){
+  const terr=ctx.scoring==='placed'?0.35:1, power=!!ctx.gold;
+  const ex=cfg.ex||1; let v=ex*terr*(a.exP-before.exP) - 1.15*ex*terr*(a.exO-before.exO);
+  if(power) v+=40*((a.goldP-before.goldP)-(a.goldO-before.goldO));
+  if(cfg.race){ v+=cfg.race*(a.vorP-a.vorO)*(power?0.25:1); if(power) v+=cfg.gRace*(a.gVorP-a.gVorO); }
+  return v;
+}
+function cpuPick(ctx,p,dice,level,rnd,budgetMs){
+  rnd=rnd||Math.random;
+  const cfg=CPU_LEVELS[level]||CPU_LEVELS.medium;
+  const {W,H}=ctx, N=W*H, o=p===1?2:1;
+  const base=Int8Array.from(ctx.cells);
+  const spots=cpuSpots(base,W,H,p,dice[0],dice[1]);
+  if(spots.length<=1) return spots[0]||null;
+  if(rnd()<cfg.random) return spots[Math.floor(rnd()*spots.length)];
+  const before=cpuAnalyse(ctx,base,p,false);
+  const work=new Int8Array(N);
+  const put=(src,dst,s,who)=>{ dst.set(src); for(let j=s.y;j<s.y+s.h;j++) for(let i=s.x;i<s.x+s.w;i++) dst[j*W+i]=who; };
+  let scored=spots.map(s=>{ put(base,work,s,p); const v=cpuScore(ctx,before,cpuAnalyse(ctx,work,p,cfg.race>0,cfg.horizon),cfg,p)+rnd()*cfg.noise; return {s,v}; });
+  scored.sort((x,y)=>y.v-x.v);
+  const lives=ctx.lives||{1:3,2:3}, outRule=ctx.noFit!=='pass';
+  const kSelf=outRule?(lives[p]<=1?70:28):10, kOpp=outRule?(lives[o]<=1?60:24):10;
+  if(cfg.look){
+    const top=scored.slice(0,14);
+    for(const t of top){ put(base,work,t.s,p); t.fs=cpuFitChance(work,W,H,p); t.fo=cpuFitChance(work,W,H,o); t.v+=kSelf*t.fs-kOpp*t.fo; }
+    top.sort((x,y)=>y.v-x.v); scored=top;
+  }
+  if(cfg.slip&&rnd()<cfg.slip) return scored[Math.floor(rnd()*Math.min(4,scored.length))].s;   // medium: sometimes settles for a decent move
+  if(!cfg.search) return scored[0].s;
+
+  // Hard: two-move search. For the strongest candidates, imagine the opponent's best reply to a
+  // spread of rolls (judged the way a sharp player would), and keep the move that holds up best.
+  const kMiss=outRule?(lives[o]<=1?60:22):8;
+  const t0=Date.now(), budget=budgetMs||(N>900?650:380);
+  const reply=new Int8Array(N), oppCfg=CPU_LEVELS.hard;
+  const K=Math.min(scored.length, N>900?6:8);
+  let best=null;
+  for(let i=0;i<K;i++){
+    if(i>=2&&Date.now()-t0>budget) break;
+    const cand=scored[i]; put(base,work,cand.s,p);
+    const mid=cpuAnalyse(ctx,work,o,false);          // position after our move, from their side
+    let total=0;
+    for(const [ra,rb] of CPU_REPLY_ROLLS){
+      const oSpots=cpuSpots(work,W,H,o,ra,rb);
+      if(!oSpots.length){ const a=cpuAnalyse(ctx,work,p,true); total+=cpuScore(ctx,before,a,cfg,p)+kMiss; continue; }
+      // their best reply by the same judgement
+      let bv=-1e9, bs=null;
+      const step=oSpots.length>160?Math.ceil(oSpots.length/160):1;     // thin out huge reply lists on big boards
+      for(let j=0;j<oSpots.length;j+=step){ put(work,reply,oSpots[j],o); const v=cpuScore(ctx,mid,cpuAnalyse(ctx,reply,o,true),oppCfg,o); if(v>bv){ bv=v; bs=oSpots[j]; } }
+      put(work,reply,bs,o);
+      total+=cpuScore(ctx,before,cpuAnalyse(ctx,reply,p,true),cfg,p);
+    }
+    let v=total/CPU_REPLY_ROLLS.length;
+    v+=cfg.look?(kSelf*cand.fs-kOpp*cand.fo):kSelf*cpuFitChance(work,W,H,p);
+    if(!best||v>best.v) best={s:cand.s,v};
+  }
+  return best.s;
+}
+/* (END-AI) */
+
+/* ---------- computer turns ----------
+   The computer is always Player 2. Its turn plays out in visible steps: roll, think and show
+   where it's going, then place. Leaving the board, undoing or starting over cancels it. */
+let cpuTimer=null, cpuGen=0;
+const isCpuGame=()=>!!G&&G.S&&G.S.vs==='cpu';
+const isCpuTurn=()=>isCpuGame()&&G.turn===2&&!G.over;
+function cancelCpu(){ clearTimeout(cpuTimer); cpuTimer=null; cpuGen++; }
+function maybeCpu(){
+  if(!isCpuTurn()||online()||$('game').hidden||cpuTimer) return;
+  const gen=cpuGen;
+  const step=(ms,fn)=>{ cpuTimer=setTimeout(()=>{ cpuTimer=null; if(gen!==cpuGen||!isCpuTurn()||$('game').hidden) return; fn(); },ms); };
+  const who=nameOf(2);
+  if(!G.dice){
+    step(700,()=>{ snapshot(); const a=1+Math.floor(Math.random()*6), b=1+Math.floor(Math.random()*6);
+      applyRoll(a,b); G.ghost=null; G.cpuPlan=false;
+      if(!G.noFit) setMsg(`${who} rolled a ${a}×${b} and is thinking…`);
+      shakeDice(); render(); });
+    return;
+  }
+  if(G.noFit){ step(1300,()=>noFitContinue()); return; }
+  if(!G.cpuPlan||!G.ghost){
+    step(350,()=>{   // the search runs here; the "thinking" message is already on screen
+      const c=cpuPick({W:G.S.W,H:G.S.H,cells:G.cells,gold:G.gold,scoring:G.S.scoring,noFit:G.S.noFit,lives:G.lives},2,G.dice,G.S.ai||'medium');
+      if(!c){ G.noFit=true; render(); return; }
+      G.ghost={...c}; G.cpuPlan=true; revealGhost(); setMsg(`${who} is placing a ${c.w}×${c.h}…`); render(); });
+    return;
+  }
+  step(750,()=>{ G.cpuPlan=false; place(); });
 }
 
 /* ---------- turn flow ---------- */
@@ -692,6 +904,15 @@ function suggest(){
   revealGhost(); render();
 }
 function undo(){
+  cancelCpu();
+  if(isCpuGame()){
+    // step back to just before your last placement, keeping your roll
+    const h=G.history; let i=h.length-1;
+    for(;i>=0;i--){ const st=JSON.parse(h[i]); if(st.turn===1&&st.dice&&!st.noFit) break; }
+    if(i<0){ setMsg('Nothing to undo yet.'); render(); return; }
+    const st=JSON.parse(h[i]); h.length=i; G=st; G.history=h; G.cpuPlan=false;
+    regionCache=null; setMsg('Undone. Place your block again.'); save(); render(); return;
+  }
   const t=G.history.pop(); if(!t) return;
   const h=G.history; G=JSON.parse(t); G.history=h; regionCache=null; setMsg('Undone.'); save(); render();
 }
@@ -910,7 +1131,7 @@ function render(){
     rb.textContent=G.out[other]?'Continue':`Continue to ${nameOf(other)}`; rb.hidden=false; rb.disabled=false;
   } else { rb.textContent=`Roll for ${who}`; rb.hidden=manual; rb.disabled=!!G.dice; }
   const mine=myTurn();
-  if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=online()&&NET.status==='waiting'?'Waiting for a player':`${who}'s turn`; }
+  if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=online()&&NET.status==='waiting'?'Waiting for a player':isCpuTurn()?`${who} is playing…`:`${who}'s turn`; }
   $('manualRow').hidden=!manual||!!G.dice||!!G.over||!mine;
   $('placeRow').hidden=!G.dice||G.noFit||!!G.over||!mine;
   $('placeBtn').className=G.turn===1?'go1':'go2';
@@ -919,7 +1140,7 @@ function render(){
   $('placeBtn').disabled=!G.ghost;
   $('rotBtn').disabled=!G.ghost||G.dice[0]===G.dice[1];
   document.querySelectorAll('.pad button').forEach(b=>b.disabled=!G.ghost);
-  $('undoBtn').disabled=!G.history.length; $('undoBtn').hidden=online();
+  $('undoBtn').disabled=!G.history.length||isCpuTurn(); $('undoBtn').hidden=online();
   $('quitBtn').hidden=online()&&!NET.seat;
   renderNet();
   const m=$('msg');
@@ -933,7 +1154,7 @@ function render(){
   } else if(online()&&!G.lastMsg&&!G.dice&&!G.over){
     m.textContent=`${G.note?G.note+' ':''}Your turn. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`;
   } else
-  m.textContent=G.lastMsg||(G.dice?'':`${who}'s turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
+  m.textContent=G.lastMsg||(isCpuTurn()?(G.note?G.note+' ':'')+`${who} is taking its turn…`:'')||(G.dice?'':`${who}'s turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
   m.className='msg '+(G.msgCls||'');
   $('overSheet').hidden=!G.over||overHidden;
   $('rematch').hidden=online()&&!NET.seat;
@@ -958,6 +1179,7 @@ function render(){
   }
   draw();
   G.lastMsg=''; G.msgCls='';
+  maybeCpu();
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -968,9 +1190,9 @@ $('placeBtn').onclick=place; $('rotBtn').onclick=rotate; $('sugBtn').onclick=sug
 document.querySelectorAll('.pad button[data-dx]').forEach(b=>b.onclick=()=>nudge(+b.dataset.dx,+b.dataset.dy));
 $('quitBtn').onclick=()=>{$('quitConfirm').hidden=false;};
 $('quitNo').onclick=()=>{$('quitConfirm').hidden=true;};
-$('quitYes').onclick=()=>{$('quitConfirm').hidden=true; closeSheets(); if(online()&&!NET.seat) return; G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; overHidden=false; commit(); render();};
+$('quitYes').onclick=()=>{$('quitConfirm').hidden=true; closeSheets(); if(online()&&!NET.seat) return; cancelCpu(); G.over={why:'Ended early by the players.'}; G.dice=null; G.ghost=null; overHidden=false; commit(); render();};
 $('quitSetup').onclick=()=>{$('quitConfirm').hidden=true; leaveOnline(true); showHome();};  // online: keep it so Rejoin works
-$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; overHidden=false; fitView(); commit(); render(); };
+$('rematch').onclick=()=>{ if(online()&&!NET.seat) return; cancelCpu(); G=newGame(G.S); G.note='New game. '+G.S.n1+' rolls first.'; regionCache=null; V=null; overHidden=false; fitView(); commit(); render(); };
 $('newSetup').onclick=()=>{ leaveOnline(); showHome(); };
 $('seeBoard').onclick=()=>{ overHidden=true; render(); };
 let overHidden=false;
@@ -989,7 +1211,7 @@ document.addEventListener('keydown',e=>{
 });
 
 const SCREENS=['home','setup','joinScreen','game'];
-function showScreen(id){ SCREENS.forEach(s=>$(s).hidden=s!==id); }
+function showScreen(id){ if(id!=='game') cancelCpu(); SCREENS.forEach(s=>$(s).hidden=s!==id); }
 function showGame(){
   closeSheets(); showScreen('game');
   regionCache=null; G.out=G.out||{1:false,2:false}; overHidden=false;
@@ -1000,8 +1222,11 @@ const showSetup=showHome;
 function placeServer(slot){ $(slot).appendChild($('serverWrap')); }
 function openSetup(mode){
   playMode=mode; prefillSettings();
-  $('setupTitle').textContent=mode==='host'?'Host online':'Pass & play';
-  $('setupLede').textContent=mode==='host'?'You play from the top-left corner. Share the code once the game is created.':'Two players, one phone. Pass it across after each turn.';
+  $('setupTitle').textContent=mode==='host'?'Host online':mode==='cpu'?'Play the computer':'Pass & play';
+  $('setupLede').textContent=mode==='host'?'You play from the top-left corner. Share the code once the game is created.'
+    :mode==='cpu'?'You play from the top-left corner and go first. The computer plays from the bottom-right.'
+    :'Two players, one phone. Pass it across after each turn.';
+  syncAiHint();
   $('start').textContent=mode==='host'?'Create game':'Start game';
   showErr('hostErr',''); placeServer('serverSlotHost'); showScreen('setup'); syncPlayModes();
   $('setup').querySelector('.scroll').scrollTop=0;
@@ -1009,7 +1234,7 @@ function openSetup(mode){
 function openJoin(){ playMode='join'; showErr('joinErr',''); placeServer('serverSlotJoin'); showScreen('joinScreen'); syncPlayModes(); }
 function prefillSettings(){
   const src=G||load();
-  if(src&&src.S){ const S=src.S; $('n1').value=S.n1; $('n2').value=S.n2; gw.value=S.W; gh.value=S.H;
+  if(src&&src.S){ const S=src.S; $('n1').value=S.n1; if(S.vs!=='cpu') $('n2').value=S.n2; if(S.ai) $('ai').value=S.ai; gw.value=S.W; gh.value=S.H;
     const p=`${S.W}x${S.H}`; preset.value=[...preset.options].some(o=>o.value===p)?p:'custom';
     $('endRule').value=S.endRule; $('rounds').value=S.rounds; $('target').value=S.target; $('scoring').value=S.scoring; $('mode').value=S.mode||'classic'; $('golds').value=S.golds||7;
     $('noFit').value=S.noFit||'out'; $('lives').value=S.lives||3; $('stall').value=S.stall; $('diceMode').value=S.diceMode; }
@@ -1019,6 +1244,7 @@ function prefillSettings(){
 /* ---------- boot ---------- */
 function migrate(g){
   g.history=g.history||[]; g.S.noFit=g.S.noFit||'out'; if(g.ghost&&!Number.isFinite(g.ghost.x+g.ghost.y)) g.ghost=null; g.S.lives=g.S.lives||3;
+  g.cpuPlan=false; if(g.S.vs==='cpu'&&g.turn===2) g.ghost=null;
   g.ctrl=g.ctrl||new Array(g.cells.length).fill(0); g.lives=g.lives||{1:g.S.lives,2:g.S.lives}; g.out=g.out||{1:false,2:false};
   return g;
 }
@@ -1043,7 +1269,7 @@ const NET={kind:null,db:null,user:null,ref:null,unsub:null,code:null,seat:0,rev:
            q:Promise.resolve(),checked:false,base:'',sameOrigin:false,token:null,timer:null,polling:false};
 let playMode='local';
 function online(){ return !!NET.code; }
-function myTurn(){ return !online()||(NET.status==='playing'&&!!G&&G.turn===NET.seat); }
+function myTurn(){ if(isCpuTurn()) return false; return !online()||(NET.status==='playing'&&!!G&&G.turn===NET.seat); }
 function normBase(u){ u=(u||'').trim(); if(!u) return ''; if(!/^https?:\/\//i.test(u)) u='http://'+u; return u.replace(/\/+$/,''); }
 async function bootNet(resumeNet){
   try{ NET.db=await window.claude?.use?.('db')||null; }catch(e){ NET.db=null; }
@@ -1104,8 +1330,9 @@ function useServerField(){
 function syncPlayModes(){
   const srv=NET.kind==='server';
   $('pmHost').disabled=$('pmJoin').disabled=!NET.checked;
-  $('serverWrap').hidden=!(srv&&!NET.sameOrigin&&playMode!=='local');
-  $('n2Wrap').hidden=playMode==='host';
+  $('serverWrap').hidden=!(srv&&!NET.sameOrigin&&(playMode==='host'||playMode==='join'));
+  $('n2Wrap').hidden=playMode==='host'||playMode==='cpu';
+  $('aiWrap').hidden=$('aiHint').hidden=playMode!=='cpu';
   if(playMode==='host'&&!srv) $('setupLede').textContent='You play from the top-left corner. The other player needs this page shared with them as an Editor.';
   const saved=savedNet();
   $('rejoin').hidden=!(NET.checked&&saved&&saved.code&&saved.kind===NET.kind)||online();
@@ -1115,6 +1342,7 @@ function syncPlayModes(){
   if(canResume) $('resumeInfo').textContent=`${lg.S.n1} vs ${lg.S.n2} · Round ${lg.round||1}${lg.S.mode==='power'?' · Power Squares':''}`;
 }
 $('pmLocal').onclick=()=>openSetup('local');
+$('pmCpu').onclick=()=>openSetup('cpu');
 $('pmHost').onclick=()=>openSetup('host');
 $('pmJoin').onclick=()=>{ openJoin(); setTimeout(()=>$('joinCode').focus(),50); };
 $('joinCode').oninput=e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4); };
