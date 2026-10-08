@@ -100,7 +100,7 @@ input::placeholder{color:var(--muted);opacity:.7}
 .lrow .rm:active{background:var(--chip)}
 .addrow{width:100%;text-align:left;font:inherit;color:var(--muted)}
 .addrow .lk{font-weight:700;color:var(--ink)}
-.addrow .addtag{margin-left:auto;font-size:12.5px;font-weight:700}
+.addrow .addtag,.seat .addtag{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--muted)}
 .addrow .dotc{opacity:.45}
 .seathint{margin:8px 4px 0;font-size:13px}
 .err{color:var(--bad);font-size:14px;margin:12px 4px 0}
@@ -204,8 +204,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .result td,.result th{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line)}
 .result th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 .result td:first-child,.result th:first-child{text-align:left;font-weight:700}
-.result .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.result .btns .cta{grid-column:1/-1}
+.result .btns{display:flex;flex-direction:column;gap:8px}
+.result .row3{display:flex;gap:8px}
+.result .row3 .ghost{flex:1 1 0;padding:0 8px}
 .result .ghost{min-height:48px}
 
 @media (prefers-reduced-motion:reduce){.roll-anim .die,.sheet,.scrim{animation:none}}
@@ -442,8 +443,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     </table>
     <div class="btns">
       <button id="rematch" class="cta">Rematch</button>
-      <button id="seeBoard" class="ghost">See board</button>
-      <button id="newSetup" class="ghost">Home</button>
+      <div class="row3">
+        <button id="changeGame" class="ghost">Change game</button>
+        <button id="seeBoard" class="ghost">See board</button>
+        <button id="newSetup" class="ghost">Home</button>
+      </div>
+      <p class="why" id="changeHint" hidden></p>
     </div>
   </div>
 </div>
@@ -505,7 +510,15 @@ const seatModel={
 };
 function seatList(){ return seatModel[playMode]||seatModel.local; }
 function renderSeats(){
-  const list=seatList(), box=$('seatRows'); box.innerHTML='';
+  const box=$('seatRows'); box.innerHTML='';
+  if(playMode==='room'){
+    G.S.players.forEach((p,i)=>{ const row=document.createElement('div'); row.className='lrow seat';
+      row.innerHTML=`<span class="dotc d${i+1}"></span><span class="lk"></span><span class="addtag">${SEAT_COLORS[i]}</span>`;
+      row.querySelector('.lk').textContent=p.n; box.appendChild(row); });
+    $('seatHint').hidden=false; $('seatHint').textContent='Everyone in the room plays the next game. The first turn moves along one seat.';
+    return;
+  }
+  const list=seatList();
   list.forEach((s,i)=>{
     const seat=i+1, row=document.createElement('div'); row.className='lrow seat';
     const dot=`<span class="dotc d${seat}"></span>`;
@@ -587,7 +600,7 @@ function genGold(W,H,n,N){
   }
   return best||[];
 }
-$('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } cancelCpu(); G=newGame(readSettings()); V=null; showGame(); };
+$('start').onclick=()=>{ if(playMode==='host'){ hostGame(); return; } if(playMode==='room'){ roomStart(); return; } cancelCpu(); G=newGame(readSettings()); V=null; showGame(); };
 $('resume').onclick=()=>{ const g=load(); if(g) G=migrate(g); showGame(); };
 
 /* ---------- persistence ---------- */
@@ -1274,8 +1287,11 @@ function render(){
     m.textContent=G.lastMsg||(isCpuTurn()?(G.note?G.note+' ':'')+`${who} is taking its turn…`:'')||(G.dice?'':`${lead}${whose} turn${solo}. ${manual?'Roll your dice and enter them.':'Roll the dice.'}`);
   }
   m.className='msg '+(G.msgCls||'');
-  $('overSheet').hidden=!G.over||overHidden;
+  $('overSheet').hidden=!G.over||overHidden||$('game').hidden;
   $('rematch').hidden=online()&&!NET.seat;
+  $('changeGame').hidden=online()&&NET.seat!==1;
+  $('changeHint').hidden=!(online()&&NET.seat>1);
+  $('changeHint').textContent=online()?`${nameOf(1)} can change the mode or board for the next game.`:'';
   $('leaveLabel').textContent=online()?'Leave game':'Back to home';
   if(G.over) renderResults(sc);
   draw();
@@ -1325,7 +1341,13 @@ function closeSheets(){ ['menuSheet','rulesSheet'].forEach(id=>$(id).hidden=true
 document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',closeSheets));
 $('menuBtn').onclick=()=>{ $('quitConfirm').hidden=true; $('menuSheet').hidden=false; };
 $('howBtn').onclick=$('howBtn2').onclick=()=>{ $('menuSheet').hidden=true; $('rulesSheet').hidden=false; };
-$('setupBack').onclick=$('joinBack').onclick=()=>showHome();
+$('setupBack').onclick=()=>{ if(playMode==='room'&&online()&&G){ showGame(); return; } showHome(); };
+$('joinBack').onclick=()=>showHome();
+// After a game: pick a new mode, board or rules. Online, the host does this for the whole room.
+$('changeGame').onclick=()=>{
+  if(online()){ if(NET.seat!==1) return; openSetup('room'); return; }
+  openSetup(isCpuGame()?'cpu':'local');
+};
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheets(); });
 document.addEventListener('keydown',e=>{
   if($('game').hidden||!G||G.over||e.target.matches('input,select')||!$('menuSheet').hidden) return;
@@ -1336,7 +1358,7 @@ document.addEventListener('keydown',e=>{
 });
 
 const SCREENS=['home','setup','joinScreen','game'];
-function showScreen(id){ if(id!=='game') cancelCpu(); SCREENS.forEach(s=>$(s).hidden=s!==id); }
+function showScreen(id){ if(id!=='game'){ cancelCpu(); $('overSheet').hidden=true; } SCREENS.forEach(s=>$(s).hidden=s!==id); }
 function showGame(){
   closeSheets(); showScreen('game');
   regionCache=null; G.out=G.out||{1:false,2:false}; overHidden=false;
@@ -1347,12 +1369,13 @@ const showSetup=showHome;
 function placeServer(slot){ $(slot).appendChild($('serverWrap')); }
 function openSetup(mode){
   playMode=mode; prefillSettings();
-  $('setupTitle').textContent=mode==='host'?'Host online':mode==='cpu'?'Play the computer':'Pass & play';
-  $('setupLede').textContent=mode==='host'?"You're Blue, in the top-left corner. Create the game, share the code, and start once others have joined."
+  $('setupTitle').textContent=mode==='host'?'Host online':mode==='room'?'Change game':mode==='cpu'?'Play the computer':'Pass & play';
+  $('setupLede').textContent=mode==='room'?`Same room (${NET.code}), same players. Pick the mode, board and rules for the next game.`
+    :mode==='host'?"You're Blue, in the top-left corner. Create the game, share the code, and start once others have joined."
     :mode==='cpu'?"You're Blue, in the top-left corner, and go first. Add up to three computers."
     :'Two to four players on one phone. Pass it along after each turn.';
   renderSeats();
-  $('start').textContent=mode==='host'?'Create game':'Start game';
+  $('start').textContent=mode==='host'?'Create game':mode==='room'?'Start next game':'Start game';
   showErr('hostErr',''); placeServer('serverSlotHost'); showScreen('setup'); syncPlayModes();
   $('setup').querySelector('.scroll').scrollTop=0;
 }
@@ -1546,6 +1569,15 @@ async function joinGame(code,name){
   }
   finally{ $('joinBtn').disabled=false; }
 }
+// Host changed the game after a round: same room, same players, new settings.
+function roomStart(){
+  if(!online()||NET.seat!==1||!G) return;
+  const S={...readSettings(), players:G.S.players, vs:'human'};
+  const P=seatsOf(S), next=P[(P.indexOf(G.first||1)+1)%P.length];
+  G=newGame(S,next);
+  G.note=`New game: ${S.mode==='power'?'Power Squares':'Classic'}, ${S.W} × ${S.H}. ${nameOf(next)} goes first.`;
+  NET.status='playing'; regionCache=null; V=null; showGame(); commit(); render();
+}
 // Host taps Start: deal a fresh game for everyone who joined.
 function hostStart(){
   if(!lobby()||NET.seat!==1||G.S.players.length<2) return;
@@ -1590,14 +1622,18 @@ function onRemote(snap){
   const wasLobby=NET.status==='waiting';
   NET.rev=rev; NET.status=d.status;
   let st; try{ st=JSON.parse(d.state); }catch(e){ return; }
-  const prevDice=G&&G.dice;
+  const prevDice=G&&G.dice, prevSize=G&&G.S?G.S.W+'x'+G.S.H:'';
   const keep=G&&G.ghost&&st.turn===NET.seat&&G.turn===st.turn&&st.dice&&G.dice&&st.dice[0]===G.dice[0]&&st.dice[1]===G.dice[1];
   const ghost=keep?G.ghost:null;
   G=migrate({...st}); G.ghost=ghost; G.history=[];
   if(!st.dice) G.dice=null;
   regionCache=null;
   if(!NET.first){ NET.first=true; V=null; showGame(); }
-  else { if(wasLobby&&NET.status!=='waiting'){ V=null; fitView(); } render(); if(!prevDice&&G.dice) shakeDice(); }
+  else {
+    if((wasLobby&&NET.status!=='waiting')||prevSize!==G.S.W+'x'+G.S.H){ V=null; fitView(); }
+    if(!G.over) overHidden=false;
+    render(); if(!prevDice&&G.dice) shakeDice();
+  }
 }
 function commit(){
   save();
