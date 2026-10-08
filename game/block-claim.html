@@ -165,7 +165,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .reroll svg{width:18px;height:18px}
 .reroll small{font-size:10.5px;font-weight:700;color:var(--muted)}
 .reroll.urgent{background:var(--ink);color:var(--paper)} .reroll.urgent small{color:inherit;opacity:.75}
-.controls{height:112px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.controls{min-height:112px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.lobbyrow{display:flex;gap:8px}
+.lobbyrow select{flex:0 0 auto;height:48px;padding:0 12px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-weight:700}
+.lobbyrow .ghost{flex:1 1 auto;min-height:48px} .lobbyrow #rmCpuBtn{flex:0 0 auto}
 .pad{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr;gap:6px}
 .pad button,.row2 button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-size:20px;font-weight:700}
 .pad #placeBtn{font-size:16px;font-weight:800;color:#fff;background:var(--ink)}
@@ -409,6 +412,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button id="rerollBtn" class="reroll" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span>Reroll</span><small id="rerollLeft"></small></button>
     </div>
     <div class="controls">
+      <div class="lobbyrow" id="lobbyRow" hidden>
+        <select id="lobbyLevel" aria-label="Computer difficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select>
+        <button id="addCpuBtn" class="ghost">+ Add computer</button>
+        <button id="rmCpuBtn" class="ghost" aria-label="Remove the last computer">Remove</button>
+      </div>
       <div class="manual" id="manualRow" hidden>
         <select id="m1" aria-label="Die 1"></select><select id="m2" aria-label="Die 2"></select>
         <button id="useRoll" class="ghost">Use roll</button>
@@ -498,7 +506,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <li><b>Power Squares.</b> Only golden squares score. Cover one or seal it inside your space to capture it. They land somewhere new each game.</li>
       <li><b>Rematch.</b> Who goes first moves along one seat each rematch.</li>
       <li><b>Computer.</b> Add up to three, each Easy, Medium or Hard. Easy plays loosely. Medium races for space nearby. Hard reads the whole board, walls players in and squeezes the room they need for their next roll.</li>
-      <li><b>Online.</b> The host shares a 4-letter code and up to three players join with it, then the host taps Start. Each phone moves on its own turn.</li>
+      <li><b>Online.</b> The host shares a 4-letter code and up to three players join with it. The host can also fill seats with computers, then taps Start. Each phone moves on its own turn; the host's phone plays the computers.</li>
     </ol>
     <button class="ghost" data-close style="min-height:50px">Got it</button>
   </div>
@@ -984,7 +992,8 @@ function cpuPick(ctx,p,dice,level,rnd,budgetMs){
    where it's going, then place. Leaving the board, undoing or starting over cancels it. */
 let cpuTimer=null, cpuGen=0;
 const isCpuGame=()=>!!G&&G.S&&G.S.players.some(p=>p.cpu);
-const isCpuTurn=()=>!!G&&!G.over&&isCpuSeat(G.turn)&&!online();
+// Online, the host's phone plays the computers' turns and sends them to everyone.
+const isCpuTurn=()=>!!G&&!G.over&&isCpuSeat(G.turn)&&(!online()||(NET.seat===1&&NET.status==='playing'));
 function cancelCpu(){ clearTimeout(cpuTimer); cpuTimer=null; cpuGen++; }
 function cpuCtx(){ return {W:G.S.W,H:G.S.H,cells:G.cells,gold:G.gold,scoring:G.S.scoring,noFit:G.S.noFit,lives:G.lives,players:seats(),out:G.out}; }
 function maybeCpu(){
@@ -1387,6 +1396,8 @@ function render(){
   } else { rb.textContent=who==='You'?'Roll':`Roll for ${who}`; rb.hidden=manual; rb.disabled=!!G.dice; }
   const mine=myTurn();
   if(!mine){ rb.hidden=false; rb.disabled=true; rb.textContent=isCpuTurn()?`${who} is playing…`:`${who==='You'?'Your':who+"'s"} turn`; }
+  const host=lobby()&&NET.seat===1, lastCpu=!!S.players[P.length-1]?.cpu;
+  $('lobbyRow').hidden=!host; $('addCpuBtn').disabled=P.length>=4; $('rmCpuBtn').hidden=!lastCpu;
   if(lobby()){
     rb.hidden=false; rb.className='cta';
     if(NET.seat===1){ rb.disabled=P.length<2; rb.textContent=P.length<2?'Waiting for players':`Start game · ${P.length} players`; }
@@ -1409,8 +1420,9 @@ function render(){
   const others=P.filter(q=>q!==G.turn), solo=others.length&&others.every(q=>G.out[q])?` (playing on alone)`:'';
   if(lobby()){
     m.textContent=NET.seat===1
-      ?(P.length<2?`Share code ${NET.code}. Up to three players can join.`:`${P.length} of 4 players are here. Start now or wait for more.`)
-      :`You're ${SEAT_COLORS[NET.seat-1]}. ${P.length} of 4 players are here.`;
+      ?(P.length<2?`Share code ${NET.code}. Up to three players can join, or add a computer.`
+         :P.length<4?`${P.length} of 4 seats filled. Start now, wait for more, or add a computer.`:'All 4 seats filled. Start when ready.')
+      :`You're ${SEAT_COLORS[NET.seat-1]}. ${P.length} of 4 seats filled.`;
     G.lastMsg=''; G.msgCls='';
   } else if(online()&&!mine&&!G.over){
     const note=G.note?G.note+' ':'';
@@ -1701,10 +1713,10 @@ async function joinGame(code,name){
       if(!snap.exists){ showErr('joinErr',`No game found with code ${code}. Check it with the host.`); return; }
       const d=snap.data(), seats=d.seats||{}, me=await myId();
       let seat=+(Object.keys(seats).find(k=>seats[k]===me)||0);
-      const taken=Object.keys(seats).length;
+      const st=JSON.parse(d.state), taken=Math.max(Object.keys(seats).length,(st.S.players||[]).length);
       if(!seat&&d.status==='waiting'&&taken<4){
         seat=taken+1;
-        const st=JSON.parse(d.state), nm=name||`Player ${seat}`;
+        const nm=name||`Player ${seat}`;
         st.S.players=st.S.players||[]; st.S.players[seat-1]={n:nm};
         st.note=`${nm} joined as ${SEAT_COLORS[seat-1]}.`;
         await ref.update({seats:{[String(seat)]:me}, state:JSON.stringify(st), rev:(d.rev||0)+1});
@@ -1726,6 +1738,22 @@ function roomStart(){
   G.note=`New game: ${S.mode==='power'?'Power Squares':'Classic'}, ${S.W} × ${S.H}. ${nameOf(next)} goes first.`;
   NET.status='playing'; regionCache=null; V=null; showGame(); commit(); render();
 }
+// Host fills empty seats with computers while the room is waiting (they take the next seat in order).
+function addCpu(){
+  if(!lobby()||NET.seat!==1||G.S.players.length>=4) return;
+  const seat=G.S.players.length+1, level=$('lobbyLevel').value;
+  G.S.players=[...G.S.players,{n:`${SEAT_COLORS[seat-1]} CPU`,cpu:level}];
+  G.lives[seat]=G.S.lives||3; G.out[seat]=false; G.rerolls[seat]=G.S.rerolls??1;
+  G.note=`${SEAT_COLORS[seat-1]} CPU (${LEVEL_NAMES[level]}) joined.`;
+  commit(); render();
+}
+function removeCpu(){
+  if(!lobby()||NET.seat!==1) return;
+  const last=G.S.players[G.S.players.length-1]; if(!last||!last.cpu) return;
+  G.S.players=G.S.players.slice(0,-1); G.note=`${last.n} left.`;
+  commit(); render();
+}
+$('addCpuBtn').onclick=addCpu; $('rmCpuBtn').onclick=removeCpu;
 // Host taps Start: deal a fresh game for everyone who joined.
 function hostStart(){
   if(!lobby()||NET.seat!==1||G.S.players.length<2) return;

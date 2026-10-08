@@ -2,8 +2,9 @@
 
 A tiny turn-based relay: each online game is one row holding the whole game state
 (a JSON string the client builds), a revision number, and a private token per seat.
-Up to four seats: the host is seat 1 (Blue); joiners take 2 (Red), 3 (Yellow), 4 (Green)
-while the game is waiting, then the host starts it.
+Up to four seats: the host is seat 1 (Blue); joiners take the next free seat of 2 (Red),
+3 (Yellow), 4 (Green) while the game is waiting, then the host starts it. The host can also
+fill seats with computer players; the host's phone plays their turns.
 
   POST /api/games                 create a game (waiting)     -> {code, seat: 1, token, rev}
   POST /api/games/<code>/join     take the next seat / rejoin -> {seat, token}   (seat 0 = watching)
@@ -112,6 +113,15 @@ def valid_state(state):
     return parsed if isinstance(parsed, dict) else None
 
 
+def players_of(state):
+    return (state.get("S") or {}).get("players") or []
+
+
+def is_cpu_seat(state, seat):
+    pl = players_of(state)
+    return 1 <= seat <= len(pl) and bool((pl[seat - 1] or {}).get("cpu"))
+
+
 def tokens_of(row):
     """Seat tokens in seat order (older rows kept them in token1/token2)."""
     if row["tokens"]:
@@ -191,18 +201,20 @@ def join_game(code):
             con.execute("COMMIT")
             return jsonify(seat=seat, token=data.get("token"))
         toks = tokens_of(row)
-        if row["status"] != "waiting" or len(toks) >= MAX_SEATS:  # started or full: watch only
-            con.execute("COMMIT")
-            return jsonify(seat=0, token=None)
-        seat = len(toks) + 1
-        name = str(data.get("name") or "").strip()[:18] or f"Player {seat}"
         state = json.loads(row["state"])
         settings = state.setdefault("S", {})
         players = settings.setdefault("players", [{"n": settings.get("n1", "Player 1")}])
+        # the next free seat comes after everyone already in the room, people and computers alike
+        seat = max(len(players), len(toks)) + 1
+        if row["status"] != "waiting" or seat > MAX_SEATS:  # started or full: watch only
+            con.execute("COMMIT")
+            return jsonify(seat=0, token=None)
+        name = str(data.get("name") or "").strip()[:18] or f"Player {seat}"
         del players[seat - 1:]
         players.append({"n": name})
         state["note"] = f"{name} joined as {SEAT_COLORS[seat - 1]}."
         token = secrets.token_urlsafe(18)
+        toks += [None] * (seat - 1 - len(toks))  # computer seats have no token
         toks.append(token)
         con.execute(
             "UPDATE games SET state = ?, tokens = ?, rev = rev + 1, updated = ? WHERE code = ?",
@@ -261,18 +273,28 @@ def move(code):
         if row["rev"] != base:
             con.execute("ROLLBACK")
             return error("The game moved on. Reloading the latest board.", 409, game=view(row, seat))
+        current = json.loads(row["state"])
         if row["status"] == "waiting":
-            # Only the host can act in the lobby: start the game (or call it off).
-            if seat != 1 or status == "waiting":
+            # Only the host acts in the lobby: add or remove computers, start, or call it off.
+            if seat != 1:
                 con.execute("ROLLBACK")
                 return error("Waiting for the host to start the game.", 409, game=view(row, seat))
-            if status == "playing" and len(tokens_of(row)) < 2:
+            if status == "waiting":
+                # lobby edits may only add or remove computer seats after the people already in
+                old, new = players_of(current), players_of(new_state)
+                people = len(tokens_of(row))
+                if len(new) < people or len(new) > MAX_SEATS or any(
+                    (new[i] or {}).get("cpu") != (old[i] or {}).get("cpu") for i in range(min(people, len(old), len(new)))
+                ) or any(not (p or {}).get("cpu") for p in new[people:]):
+                    con.execute("ROLLBACK")
+                    return error("Someone just joined. Reloading the room.", 409, game=view(row, seat))
+            elif status == "playing" and len(players_of(new_state)) < 2:
                 con.execute("ROLLBACK")
-                return error("Waiting for at least one more player to join.", 409, game=view(row, seat))
-        current = json.loads(row["state"])
-        # During play only the player whose turn it is may move; either player may end the game
-        # early, and either may start a rematch once it is over.
-        if row["status"] == "playing" and current.get("turn") != seat and status != "over":
+                return error("Add a computer or wait for another player to join.", 409, game=view(row, seat))
+        # During play only the player whose turn it is may move (the host moves for computers);
+        # anyone may end the game early, and anyone may start a rematch once it is over.
+        turn = current.get("turn")
+        if row["status"] == "playing" and turn != seat and status != "over" and not (seat == 1 and is_cpu_seat(current, turn)):
             con.execute("ROLLBACK")
             return error("It's not your turn.", 403)
         con.execute(

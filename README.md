@@ -35,7 +35,7 @@ Check it's running: open `http://<NAS-IP>:8787/api/health` — you should see `"
 
 ### Play online
 
-- **In a browser:** open `http://<NAS-IP>:8787` on each phone. Host on one; up to three others Join with the code (Red, then Yellow, then Green), and the host taps Start.
+- **In a browser:** open `http://<NAS-IP>:8787` on each phone. Host on one; up to three others Join with the code (Red, then Yellow, then Green). The host can fill empty seats with computers (the host's phone plays them), then taps Start.
 - **In the Android app:** pick Host online or Join online, enter `<NAS-IP>:8787` as the game server, and tap Test connection.
 
 Both phones must be able to reach the NAS: on the same Wi-Fi, or anywhere through
