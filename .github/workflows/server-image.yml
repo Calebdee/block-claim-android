@@ -26,10 +26,15 @@ jobs:
           curl -sf $B/ | grep -q "Block"
           CREATE=$(curl -sf -X POST $B/api/games -H 'Content-Type: application/json' -d '{"state":"{\"S\":{\"n1\":\"A\"},\"turn\":1}"}')
           CODE=$(echo "$CREATE" | python3 -c 'import json,sys;print(json.load(sys.stdin)["code"])')
+          TOKEN=$(echo "$CREATE" | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])')
           curl -sf -X POST $B/api/games/$CODE/join -H 'Content-Type: application/json' -d '{"name":"B"}' | grep -q '"seat":2'
+          curl -sf -X POST $B/api/games/$CODE/join -H 'Content-Type: application/json' -d '{"name":"C"}' | grep -q '"seat":3'
+          curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"status":"waiting"'
+          curl -sf -X POST $B/api/games/$CODE/move -H 'Content-Type: application/json' \
+            -d "{\"token\":\"$TOKEN\",\"base\":3,\"status\":\"playing\",\"state\":\"{\\\"turn\\\":1}\"}" | grep -q '"rev":4'
           curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"status":"playing"'
           docker compose restart && sleep 3
-          curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"rev":2'
+          curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"rev":4'
           echo "Server image OK; games survive a restart."
 
       - name: Logs
