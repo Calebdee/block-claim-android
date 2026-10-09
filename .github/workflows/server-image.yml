@@ -31,7 +31,7 @@ jobs:
           curl -sf -X POST $B/api/games/$CODE/join -H 'Content-Type: application/json' -d '{"name":"C"}' | grep -q '"seat":3'
           curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"status":"waiting"'
           curl -sf -X POST $B/api/games/$CODE/move -H 'Content-Type: application/json' \
-            -d "{\"token\":\"$TOKEN\",\"base\":3,\"status\":\"playing\",\"state\":\"{\\\"turn\\\":1}\"}" | grep -q '"rev":4'
+            -d "{\"token\":\"$TOKEN\",\"base\":3,\"status\":\"playing\",\"state\":\"{\\\"turn\\\":1,\\\"S\\\":{\\\"players\\\":[{\\\"n\\\":\\\"A\\\"},{\\\"n\\\":\\\"B\\\"},{\\\"n\\\":\\\"C\\\"}]}}\"}" | grep -q '"rev":4'
           curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"status":"playing"'
           docker compose restart && sleep 3
           curl -sf "$B/api/games/$CODE?since=-1" | grep -q '"rev":4'
